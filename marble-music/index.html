@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Marble Music — a machine you can play</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#toolbar">Skip to the toy controls</a>
+<header>
+  <div class="brand">MARBLE <span>/</span> MUSIC</div>
+  <label class="name-field">Machine <input id="machine-name" type="text" maxlength="40" value="Twinkle Twinkle" aria-label="Machine name"></label>
+  <label class="scale-field">Scale
+    <select id="scale" aria-label="Scale">
+      <option value="major">Major</option>
+      <option value="minor">Minor</option>
+      <option value="penta">Major Pentatonic</option>
+      <option value="dorian">Dorian</option>
+    </select>
+  </label>
+  <nav class="header-actions">
+    <button id="presets-open" type="button">Presets</button>
+    <button id="surprise" type="button">Surprise</button>
+    <button id="share" type="button">Share</button>
+    <button id="mute" type="button" aria-pressed="false">Mute</button>
+    <label class="volume-field">Volume <output id="volume-value">0.24</output><input id="volume" type="range" min="0" max="0.6" step="0.01" value="0.24" aria-label="Volume"></label>
+  </nav>
+</header>
+<main>
+  <canvas id="canvas" aria-label="Marble machine board. Drag bars to move them, drag their ends to rotate, tap to tune."></canvas>
+</main>
+<div id="sheet" class="sheet" role="dialog" aria-label="Selected part"></div>
+<div id="presets" class="overlay" role="dialog" aria-label="Preset machines">
+  <div class="overlay-card">
+    <h2>Preset machines</h2>
+    <p class="muted">Loading a preset replaces your current machine (tap twice to confirm).</p>
+    <ul id="preset-list"></ul>
+    <button id="presets-close" type="button" class="wide">Close</button>
+  </div>
+</div>
+<div id="toast" class="toast" role="status"></div>
+<footer id="toolbar">
+  <button id="add-bar" type="button">+ Bar</button>
+  <button id="add-bumper" type="button">+ Bumper</button>
+  <button id="mode-drop" type="button" aria-pressed="false">Drop</button>
+  <button id="auto" type="button" aria-pressed="false">Auto</button>
+  <button id="clear" type="button">Clear</button>
+  <p class="hint">Drag a bar to move it · drag its glowing ends to rotate · tap a bar to tune it · Space drops a marble</p>
+</footer>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

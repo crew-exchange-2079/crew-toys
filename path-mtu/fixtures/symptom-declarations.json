@@ -1,0 +1,42 @@
+{
+  "schema": "path-mtu-evidence-kit/symptom-declarations/v1",
+  "warning": "Declared symptoms are the CLAIMS someone brings in. Each one is the story that sounds most convincing and is most often wrong. The graph answers CONFIRMED, CONTRADICTED or UNKNOWN from saved evidence only, and never proposes a change to any live setting or names any provider.",
+  "declarations": [
+    {
+      "id": "https_works_small_messages_only",
+      "declared": "HTTPS works for small messages and fails for large ones, so the path MTU must be low.",
+      "tempting": "the observed local interface MTU is the culprit",
+      "why_tempting": "there is a real number on the router and it looks like an answer"
+    },
+    {
+      "id": "no_packet_too_big_ever_seen",
+      "declared": "No packet-too-big has ever been seen, so there is no size limit.",
+      "tempting": "absence of evidence treated as evidence of absence",
+      "why_tempting": "RFC 1191 filtering means the error usually never arrives at all"
+    },
+    {
+      "id": "application_upload_cap",
+      "declared": "Uploads fail above a certain size, so the packet size is wrong.",
+      "tempting": "an HTTP body limit read as a network limit",
+      "why_tempting": "the number is right there in the response, in bytes"
+    },
+    {
+      "id": "insufficient_samples",
+      "declared": "A handful of probes is enough to decide this.",
+      "tempting": "a confident verdict from two observations",
+      "why_tempting": "two data points always draw a line"
+    },
+    {
+      "id": "large_transfer_stalls",
+      "declared": "Large transfers stall, so a path size limit is the cause.",
+      "tempting": "stall read as threshold",
+      "why_tempting": "size and stall correlate more often than size and a real limit"
+    },
+    {
+      "id": "route_mtu_is_the_path_limit",
+      "declared": "The router's reported MTU is this path's limit.",
+      "tempting": "a local number promoted to a path fact",
+      "why_tempting": "it came from a router and routers are about paths"
+    }
+  ]
+}

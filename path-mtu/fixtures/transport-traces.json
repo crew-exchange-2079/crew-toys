@@ -1,0 +1,42 @@
+{
+  "schema": "path-mtu-evidence-kit/transport-traces/v1",
+  "warning": "EVERY trace here is a NEWLY AUTHORED DOCUMENTATION-RANGE FIXTURE produced by src/transport.py against a seeded synthetic path. No trace came from a real network, no socket was opened, and no probe was sent anywhere. A trace is a story about what a sender CANNOT distinguish, not a measurement of anyone's link.",
+  "traces": [
+    {
+      "id": "clean-path",
+      "label": "Everything succeeds up to 9000",
+      "expect_conclusion": "NO_SIZE_CONSTRAINT_OBSERVED",
+      "teaches": "A success ladder bounds this path from below and nothing else. It does not say where the limit is, because none was reached."
+    },
+    {
+      "id": "explicit-ptb-1400",
+      "label": "Explicit packet-too-big above 1400",
+      "expect_conclusion": "OBSERVED_EXPLICIT_PTB_INTERVAL",
+      "teaches": "An error that actually arrives is the only thing that distinguishes a size boundary from loss. Even then the honest output is an interval between the largest success and the smallest failure."
+    },
+    {
+      "id": "blackhole-1400",
+      "label": "Silent drop above 1400, no error ever",
+      "expect_conclusion": "UNKNOWN_BLACKHOLE_OR_UPSTREAM_LOSS",
+      "teaches": "Identical probe pattern, opposite certainty. With no error to read, 1400 here is indistinguishable from loss and no size bound may be published."
+    },
+    {
+      "id": "transient-loss",
+      "label": "Random loss at 25 percent, size-independent",
+      "expect_conclusion": "UNKNOWN_TRANSIENT_LOSS",
+      "teaches": "A size that fails and then, larger, succeeds is loss. Reordering these two runs and the conclusion would flip with the data, which is the point."
+    },
+    {
+      "id": "path-change",
+      "label": "Threshold moves mid-run",
+      "expect_conclusion": "PATH_CHANGED_DURING_TEST",
+      "teaches": "A threshold measured across a path change describes a path that no longer exists. The report refuses to average it away."
+    },
+    {
+      "id": "too-few-samples",
+      "label": "Two attempts against a 6 sample floor",
+      "expect_conclusion": "INSUFFICIENT_SAMPLES",
+      "teaches": "Declaring 'not enough data' is a result. It is the one most tools refuse to publish and the one that saves people from a wrong answer."
+    }
+  ]
+}

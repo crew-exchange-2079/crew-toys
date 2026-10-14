@@ -1,0 +1,1595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How a manual gearbox works</title>
+<style>
+:root{
+  --bg:#f4f6fb; --panel:#ffffff; --panel2:#eef1f8; --ink:#14182a; --muted:#565e78;
+  --line:#ccd3e4; --shadow:rgba(20,24,42,.10);
+  --engine:#b3400e; --clutch:#6d28d9; --box:#0b6f8c; --wheel:#14683c; --gas:#8a5200;
+  --ok:#14683c; --warn:#8a5200; --bad:#a81122; --okbg:#dcf5e6; --warnbg:#fdf0d8;
+  --badbg:#fde3e6; --band:#cdeeda; --bandline:#15803d; --track:#e3e7f2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1020; --panel:#141a2e; --panel2:#1c2339; --ink:#eef1fa; --muted:#a8b0c8;
+    --line:#2c3450; --shadow:rgba(0,0,0,.45);
+    --engine:#fb923c; --clutch:#c4b5fd; --box:#67e8f9; --wheel:#6ee7a8; --gas:#fcd34d;
+    --ok:#6ee7a8; --warn:#fcd34d; --bad:#fda4af; --okbg:#123524; --warnbg:#3a2c0c;
+    --badbg:#3d1420; --band:#16412c; --bandline:#4ade80; --track:#232c44;
+  }
+}
+html[data-theme="dark"]{
+  --bg:#0b1020; --panel:#141a2e; --panel2:#1c2339; --ink:#eef1fa; --muted:#a8b0c8;
+  --line:#2c3450; --shadow:rgba(0,0,0,.45);
+  --engine:#fb923c; --clutch:#c4b5fd; --box:#67e8f9; --wheel:#6ee7a8; --gas:#fcd34d;
+  --ok:#6ee7a8; --warn:#fcd34d; --bad:#fda4af; --okbg:#123524; --warnbg:#3a2c0c;
+  --badbg:#3d1420; --band:#16412c; --bandline:#4ade80; --track:#232c44;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;overflow-x:hidden}
+body{
+  background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding:6px 10px 40px;
+}
+h1,h2,h3{line-height:1.2;margin:0}
+h1{font-size:18px;letter-spacing:-.01em}
+h2{font-size:19px;letter-spacing:-.01em}
+h3{font-size:16px}
+p{margin:.5em 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;
+  box-shadow:0 1px 2px var(--shadow);margin:0 0 12px}
+.muted{color:var(--muted)}
+.synthetic{font-size:11.5px;color:var(--muted);margin:.35em 0 0}
+.topbar{display:flex;align-items:flex-start;gap:8px;margin:0 0 8px}
+.topbar .grow{flex:1 1 auto;min-width:0}
+.made{font-size:12.5px;color:var(--clutch);font-weight:650;margin:2px 0 0}
+button{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);
+  border-radius:10px;padding:7px 10px;cursor:pointer;touch-action:manipulation}
+button:hover{border-color:var(--muted)}
+button:active{transform:translateY(1px)}
+button:focus-visible{outline:3px solid var(--clutch);outline-offset:2px}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.topbtns{flex-wrap:nowrap}
+.topbtns button{padding:5px 9px;font-size:12.5px;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:650;
+  border-radius:999px;padding:4px 9px;background:var(--panel2);border:1px solid var(--line);
+  white-space:nowrap}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.chip[hidden]{display:none}
+.chip.ok{color:var(--ok);background:var(--okbg);border-color:transparent}
+.chip.warn{color:var(--warn);background:var(--warnbg);border-color:transparent}
+.chip.bad{color:var(--bad);background:var(--badbg);border-color:transparent}
+
+/* ---------- the machine ---------- */
+.stage{display:flex;flex-direction:column;gap:6px;max-width:760px;margin:0 auto}
+.dials{display:flex;gap:8px;align-items:stretch;max-width:520px;margin:0 auto}
+.dial{flex:1 1 0;min-width:0;background:var(--panel2);border-radius:12px;padding:4px 6px}
+.dial .lbl{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  display:block;text-align:center}
+.dial .val{display:block;font-size:20px;font-weight:700;text-align:center;
+  font-variant-numeric:tabular-nums;line-height:1.1}
+.dial .unit{font-size:10px;color:var(--muted);text-align:center;display:block}
+.machine{width:100%;max-height:170px;display:block;background:var(--panel2);border-radius:12px}
+.mlabel{font:600 10px system-ui,sans-serif;fill:var(--muted)}
+.mnote{font:600 11px system-ui,sans-serif;fill:var(--ink)}
+#roadGroup line{stroke:var(--muted);stroke-width:2.4;stroke-linecap:round;opacity:.55}
+#crankSpokes line{stroke:var(--panel);stroke-width:2;stroke-linecap:round}
+#crankCircle{fill:none;stroke:var(--engine);stroke-width:3}
+#spring{stroke:var(--clutch);stroke-width:2;fill:none}
+#gapMark{stroke:var(--clutch);stroke-width:2;stroke-dasharray:3 2}
+#slipGlow{opacity:0}
+#slipGlow.on{opacity:1}
+#spokes line{stroke:var(--wheel);stroke-width:1.6;opacity:.65}
+#tyre{fill:none;stroke:var(--wheel);stroke-width:4}
+#tread line{stroke:var(--panel2);stroke-width:1.6}
+#shaft{stroke:var(--box);stroke-width:3;stroke-linecap:round}
+#diffRing{fill:var(--panel);stroke:var(--box);stroke-width:2.5}
+#gearTeethIn line,#gearTeethOut line{stroke:var(--box);stroke-width:2;stroke-linecap:round}
+
+/* ---------- controls ---------- */
+.slider{margin:0 0 4px}
+.slider .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font-size:13px;font-weight:650;margin-bottom:1px}
+.slider .row em{font-style:normal;font-weight:600;color:var(--muted);font-size:11.5px;
+  text-align:right;white-space:nowrap}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;
+  margin:0;display:block}
+input[type=range]::-webkit-slider-runnable-track{height:12px;border-radius:999px;background:var(--track);
+  border:1px solid var(--line)}
+input[type=range]::-moz-range-track{height:12px;border-radius:999px;background:var(--track);
+  border:1px solid var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;
+  background:var(--fill,var(--clutch));border:3px solid var(--panel);margin-top:-10px;
+  box-shadow:0 1px 3px var(--shadow)}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;
+  background:var(--fill,var(--clutch));border:3px solid var(--panel);box-shadow:0 1px 3px var(--shadow)}
+.biteband{position:relative;height:0}
+.gatewrap{display:flex;justify-content:center}
+.gate{--btn:56px;--gap:12px;
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,var(--btn));
+  gap:var(--gap);width:100%;max-width:320px;margin:2px auto 0}
+.gate button{position:relative;height:100%;min-height:56px;min-width:56px;font-size:22px;
+  font-weight:750;padding:0;border-radius:12px;display:flex;align-items:center;justify-content:center}
+/* neutral is the horizontal bar of the H, spanning the whole gate */
+.gate button.neutral{grid-column:1 / -1;font-size:15px;letter-spacing:.3em;padding-left:.3em}
+/* the rails: every notch runs to the neutral bar, which is what makes it an H */
+.gate button[data-gear="1"]::after,.gate button[data-gear="3"]::after,
+.gate button[data-gear="5"]::after,.gate button[data-gear="2"]::before,
+.gate button[data-gear="4"]::before,.gate button[data-gear="R"]::before{
+  content:"";position:absolute;left:50%;width:5px;height:var(--gap);margin-left:-2.5px;
+  border-radius:3px;background:var(--muted);opacity:.5;z-index:0}
+.gate button[data-gear="1"]::after,.gate button[data-gear="3"]::after,
+.gate button[data-gear="5"]::after{top:100%}
+.gate button[data-gear="2"]::before,.gate button[data-gear="4"]::before,
+.gate button[data-gear="R"]::before{bottom:100%}
+.gate button.on{background:var(--box);color:var(--panel);border-color:var(--box)}
+.gate button.refused{animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.capline{font-size:11.5px;color:var(--muted);text-align:center;margin:.3em 0 0}
+.hint{font-size:12px;color:var(--muted);margin:.4em 0 0;min-height:1.2em}
+.hint.warn{color:var(--warn);font-weight:650}
+.hint.bad{color:var(--bad);font-weight:650}
+
+/* ---------- the bicycle bridge ---------- */
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.steps button{font-size:12.5px;font-weight:650;padding:6px 9px;white-space:nowrap;flex:0 1 auto}
+.steps button.on{background:var(--clutch);color:var(--panel);border-color:var(--clutch)}
+.bridge{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.panel{background:var(--panel2);border-radius:12px;padding:6px;min-width:0}
+.panel h4{margin:2px 0 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.panel svg{width:100%;height:auto;display:block}
+.maps{list-style:none;margin:8px 0 0;padding:0;font-size:13.5px}
+.maps li{padding:5px 8px;background:var(--panel2);border-radius:9px;margin-bottom:5px;
+  border-left:4px solid var(--clutch)}
+#bWheel,#bCrank{fill:none;stroke-width:2.5}
+#bWheel{stroke:var(--wheel)} #bCrank{stroke:var(--engine)}
+#bSpokes line{stroke:var(--wheel);stroke-width:1.4;opacity:.6}
+#bCrankSpokes line{stroke:var(--engine);stroke-width:1.6}
+#bSprocket{fill:none;stroke:var(--wheel);stroke-width:3}
+#bChain{stroke:var(--gas);stroke-width:2.2;fill:none}
+#cBlock{fill:var(--panel);stroke:var(--engine);stroke-width:2}
+#cWheel{fill:none;stroke:var(--wheel);stroke-width:3}
+#cSpokes line{stroke:var(--wheel);stroke-width:1.2;opacity:.6}
+#cShaft{stroke:var(--box);stroke-width:2.4;stroke-linecap:round}
+.hot{filter:drop-shadow(0 0 5px currentColor)}
+.dimmable{opacity:.28}
+
+/* ---------- power band strip ---------- */
+.strip{width:100%;height:auto;display:block;background:var(--panel2);border-radius:12px}
+#stripBand{fill:var(--band);stroke:var(--bandline);stroke-width:1.5}
+#stripTrack{stroke:var(--track);stroke-width:1.5}
+#stripNeedle{stroke:var(--engine);stroke-width:3;stroke-linecap:round}
+#stripMark{stroke:var(--muted);stroke-width:2.4;stroke-linecap:round}
+#stripMark.inband{stroke:var(--bandline)}
+.slabel{font:600 12px system-ui,sans-serif;fill:var(--muted)}
+.sval{font:700 13px system-ui,sans-serif;fill:var(--ink)}
+.strip .slabel{font-size:11.5px}
+table{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+th,td{text-align:right;padding:5px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+
+/* ---------- how-to cards ---------- */
+.howto{display:grid;gap:10px}
+@media (min-width:760px){ .howto{grid-template-columns:1fr 1fr} }
+.how{border-left:5px solid var(--box)}
+.how h3{display:flex;gap:8px;align-items:baseline}
+.how h3 span.n{font-size:12px;color:var(--muted);font-weight:700}
+ol,ul{margin:.4em 0 .6em;padding-left:1.15em}
+li{margin:.25em 0}
+.mistake{font-size:13px;background:var(--badbg);color:var(--bad);border-radius:9px;padding:6px 9px;
+  margin:.5em 0 0;font-weight:600}
+.mistake b{font-weight:750}
+details{background:var(--panel2);border-radius:10px;padding:8px 10px;margin-top:6px}
+summary{font-weight:650;font-size:13.5px;cursor:pointer}
+.gloss{display:grid;gap:7px}
+@media (min-width:760px){ .gloss{grid-template-columns:1fr 1fr} }
+.gloss div{background:var(--panel2);border-radius:9px;padding:7px 9px;font-size:13.5px}
+.gloss b{color:var(--clutch)}
+footer{font-size:12px;color:var(--muted);text-align:center;margin-top:16px}
+footer span{display:block}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (min-width:700px){
+  .sliders{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;align-items:end}
+  .sliders .slider.brakecol{grid-column:1 / -1}
+  /* the drawing letterboxes rather than eating the whole screen height */
+  .stage .machine{max-height:185px}
+  .dials{max-width:none}
+  .stage{max-width:720px}
+}
+@media (min-width:1000px){
+  body{padding:14px 18px 60px;max-width:1040px;margin:0 auto}
+  h1{font-size:26px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topbar">
+    <div class="grow">
+      <h1>How a manual gearbox works</h1>
+    </div>
+    <div class="btnrow topbtns">
+      <button id="motionBtn" type="button" aria-pressed="false">Pause</button>
+      <button id="themeBtn" type="button">Dark</button>
+    </div>
+  </div>
+  <p class="synthetic"><b>Synthetic:</b> a made-up car with round numbers.</p>
+</header>
+
+<main>
+
+<!-- ============ FIRST SCREEN: THE WORKING MACHINE AT REST ============ -->
+<section class="card stage" id="machineStage" aria-labelledby="stagetitle">
+  <h2 id="stagetitle" class="visually-hidden">The working machine</h2>
+
+  <div class="dials">
+    <div class="dial">
+      <span class="lbl">Engine</span>
+      <svg viewBox="0 0 120 62" width="100%" height="48" aria-hidden="true">
+        <path d="M12 54 A48 48 0 0 1 108 54" fill="none" stroke="var(--track)" stroke-width="7"/>
+        <path id="tachBand" d="" fill="none" stroke="var(--bandline)" stroke-width="7" opacity=".5"/>
+        <line id="tachNeedle" x1="60" y1="54" x2="60" y2="12" stroke="var(--engine)"
+              stroke-width="3" stroke-linecap="round"/>
+        <circle cx="60" cy="54" r="4" fill="var(--engine)"/>
+      </svg>
+      <span class="val" id="rpmVal">800</span><span class="unit">rpm</span>
+    </div>
+    <div class="dial">
+      <span class="lbl">Road speed</span>
+      <svg viewBox="0 0 120 62" width="100%" height="48" aria-hidden="true">
+        <path d="M12 54 A48 48 0 0 1 108 54" fill="none" stroke="var(--track)" stroke-width="7"/>
+        <line id="speedNeedle" x1="60" y1="54" x2="60" y2="12" stroke="var(--wheel)"
+              stroke-width="3" stroke-linecap="round"/>
+        <circle cx="60" cy="54" r="4" fill="var(--wheel)"/>
+      </svg>
+      <span class="val" id="kphVal">0</span><span class="unit">km/h</span>
+    </div>
+  </div>
+
+  <svg class="machine" id="machine" viewBox="0 0 440 172" role="img"
+       aria-label="Diagram of an engine, a clutch, a gearbox and a driving wheel">
+    <text class="mlabel" x="31" y="16" text-anchor="middle" fill="var(--engine)">engine</text>
+    <text class="mlabel" x="88" y="16" text-anchor="middle" fill="var(--clutch)">clutch</text>
+    <text class="mlabel" x="180" y="16" text-anchor="middle" fill="var(--box)">gearbox</text>
+    <text class="mlabel" x="392" y="40" text-anchor="middle" fill="var(--wheel)">wheel</text>
+
+    <!-- road -->
+    <g id="roadGroup"><line x1="0" y1="146" x2="440" y2="146" stroke="var(--line)" stroke-width="2"/>
+    </g>
+
+    <!-- engine -->
+    <rect id="blockBody" x="4" y="46" width="56" height="72" rx="7" fill="var(--panel)" stroke="var(--engine)" stroke-width="2.5"/>
+    <g id="crank">
+      <circle id="crankCircle" cx="32" cy="82" r="17"/>
+      <g id="crankSpokes"><line x1="32" y1="82" x2="32" y2="68"/><line x1="32" y1="82" x2="32" y2="96"/>
+        <line x1="32" y1="82" x2="18" y2="82"/><line x1="32" y1="82" x2="46" y2="82"/></g>
+    </g>
+    <rect id="flywheel" x="64" y="58" width="12" height="48" rx="2" fill="var(--panel)" stroke="var(--engine)" stroke-width="2.5"/>
+
+    <!-- clutch -->
+    <g id="plateGroup">
+      <rect id="plate" x="90" y="58" width="12" height="48" rx="2" fill="var(--panel)" stroke="var(--clutch)" stroke-width="2.5"/>
+      <line id="spring" x1="102" y1="82" x2="126" y2="82"/>
+      <line id="gapMark" x1="82" y1="120" x2="106" y2="120"/>
+      <rect id="slipGlow" x="76" y="62" width="20" height="40" rx="3" fill="var(--clutch)"/>
+    </g>
+
+    <!-- gearbox -->
+    <rect x="124" y="42" width="130" height="84" rx="8" fill="none" stroke="var(--box)" stroke-width="2"/>
+    <line x1="130" y1="66" x2="248" y2="66" stroke="var(--track)" stroke-width="3"/>
+    <line x1="130" y1="100" x2="248" y2="100" stroke="var(--track)" stroke-width="3"/>
+    <circle id="gearIn" cx="176" cy="66" r="14" fill="var(--panel)" stroke="var(--track)" stroke-width="2.5"/>
+    <circle id="gearOut" cx="176" cy="100" r="20" fill="var(--panel)" stroke="var(--track)" stroke-width="2.5"/>
+    <circle id="gearIdler" cx="176" cy="83" r="9" visibility="hidden" fill="var(--panel)" stroke="var(--box)" stroke-width="2.5"/>
+    <g id="gearTeethIn"></g><g id="gearTeethOut"></g>
+    <text class="mlabel" id="gearLabel" x="212" y="86" fill="var(--box)">neutral</text>
+
+    <!-- shaft and wheel -->
+    <line id="shaft" x1="248" y1="100" x2="352" y2="112"/>
+    <circle id="diffRing" cx="352" cy="112" r="8"/>
+    <g id="wheel">
+      <circle id="tyre" cx="392" cy="112" r="29"/>
+      <g id="spokes"><line x1="392" y1="112" x2="392" y2="85"/><line x1="392" y1="112" x2="392" y2="139"/>
+        <line x1="392" y1="112" x2="365" y2="112"/><line x1="392" y1="112" x2="419" y2="112"/>
+        <line x1="392" y1="112" x2="372" y2="92"/><line x1="392" y1="112" x2="412" y2="132"/>
+        <line x1="392" y1="112" x2="372" y2="132"/><line x1="392" y1="112" x2="412" y2="92"/></g>
+      <g id="tread"><line x1="366" y1="96" x2="372" y2="90"/><line x1="392" y1="83" x2="392" y2="89"/>
+        <line x1="418" y1="96" x2="412" y2="90"/><line x1="418" y1="128" x2="412" y2="134"/>
+        <line x1="392" y1="141" x2="392" y2="135"/><line x1="366" y1="128" x2="372" y2="134"/></g>
+      <circle cx="392" cy="112" r="5" fill="var(--wheel)"/>
+    </g>
+    <text class="mnote" id="machineNote" x="8" y="164">at rest: engine idling, clutch in, neutral</text>
+  </svg>
+
+  <div class="btnrow" id="chips" style="margin-top:-2px">
+    <span class="chip" id="chipClutch"><span class="dot"></span>clutch: in</span>
+    <span class="chip" id="chipGear"><span class="dot"></span>gear: N</span>
+    <span class="chip" id="chipBand"><span class="dot"></span>engine: happy</span>
+    <span class="chip bad" id="chipStall" hidden><span class="dot"></span>STALLED</span>
+  </div>
+
+  <div class="sliders">
+  <div class="slider">
+    <div class="row"><label for="clutch">Left foot &mdash; clutch</label>
+      <em id="clutchOut">pressed all the way down</em></div>
+    <input type="range" id="clutch" min="0" max="100" value="100" step="1"
+           aria-describedby="clutchOut">
+  </div>
+  <div class="slider">
+    <div class="row"><label for="gas">Right foot &mdash; gas</label><em id="gasOut">closed</em></div>
+    <input type="range" id="gas" min="0" max="100" value="0" step="1" style="--fill:var(--gas)"
+           aria-describedby="gasOut">
+  </div>
+  <div class="slider brakecol">
+    <div class="row"><label for="brake">Brake pedal <span class="muted">(you need it to stop)</span></label>
+      <em id="brakeOut">off</em></div>
+    <input type="range" id="brake" min="0" max="100" value="0" step="1" style="--fill:var(--bad)"
+           aria-describedby="brakeOut">
+  </div>
+  </div>
+
+  <p class="capline">Up for 1, 3, 5 &middot; down for 2, 4, R &middot; across for neutral</p>
+  <div class="gatewrap">
+    <div class="gate" id="gate" role="group"
+         aria-label="Gear gate: 1, 3 and 5 along the top, neutral across the middle, 2, 4 and R along the bottom">
+      <button type="button" data-gear="1">1</button>
+      <button type="button" data-gear="3">3</button>
+      <button type="button" data-gear="5">5</button>
+      <button type="button" data-gear="N" class="neutral">N</button>
+      <button type="button" data-gear="2">2</button>
+      <button type="button" data-gear="4">4</button>
+      <button type="button" data-gear="R">R</button>
+    </div>
+  </div>
+  <p class="hint" id="gearHint">Neutral: the gearbox is not connecting anything.</p>
+  <div class="btnrow"><button type="button" id="resetBtn">Back to rest</button></div>
+</section>
+
+<!-- ============ THE BICYCLE BRIDGE ============ -->
+<section class="card" aria-labelledby="bridgetitle">
+  <h2 id="bridgetitle">Start with a bicycle</h2>
+  <p>A bicycle already has everything a manual car has. Your legs are the engine, the chain and
+  sprockets are the gears, and lifting your feet off the pedals is the clutch. Tap through the four
+  steps and watch both sides at once.</p>
+  <div class="steps" id="bridgeSteps" role="group" aria-label="Bridge steps"></div>
+  <div class="bridge">
+    <div class="panel">
+      <h4>The bicycle</h4>
+            <svg id="bike" viewBox="0 0 210 150" role="img" aria-label="Bicycle: legs, chain, sprockets">
+        <path d="M42 62 L92 34 L166 78 Z" fill="none" stroke="var(--line)" stroke-width="2.4"/>
+        <path id="bChain" d="M42 45 L166 69 M42 79 L166 87"/>
+        <g id="bWheelG"><circle id="bWheel" cx="166" cy="78" r="27"/>
+          <g id="bSpokes"><line x1="166" y1="78" x2="166" y2="53"/><line x1="166" y1="78" x2="166" y2="103"/>
+            <line x1="166" y1="78" x2="141" y2="78"/><line x1="166" y1="78" x2="191" y2="78"/>
+            <line x1="166" y1="78" x2="148" y2="60"/><line x1="166" y1="78" x2="184" y2="96"/>
+            <line x1="166" y1="78" x2="148" y2="96"/><line x1="166" y1="78" x2="184" y2="60"/></g>
+          <circle id="bSprocket" cx="166" cy="78" r="9"/>
+        </g>
+        <g id="bCrankG"><circle id="bCrank" cx="42" cy="62" r="17"/>
+          <g id="bCrankSpokes"><line x1="42" y1="62" x2="42" y2="47"/><line x1="42" y1="62" x2="42" y2="77"/>
+            <line x1="42" y1="62" x2="27" y2="62"/><line x1="42" y1="62" x2="57" y2="62"/></g>
+          <circle id="bFoot" cx="57" cy="62" r="5" fill="var(--gas)" stroke="var(--panel)" stroke-width="2"/>
+        </g>
+        <text class="mlabel" id="bLabelChain" x="104" y="22" text-anchor="middle" fill="var(--gas)">the chain</text>
+        <text class="mlabel" id="bLabelCrank" x="42" y="118" text-anchor="middle" fill="var(--engine)">your legs</text>
+        <text class="mlabel" id="bLabelRear" x="166" y="118" text-anchor="middle" fill="var(--wheel)">back sprocket</text>
+        <text class="mlabel" id="bLabelNote" x="104" y="138" text-anchor="middle" fill="var(--muted)">pedalling</text>
+      </svg>
+    </div>
+    <div class="panel">
+      <h4>The same thing in a car</h4>
+            <svg id="car" viewBox="0 0 210 150" role="img" aria-label="Car: engine, clutch, gearbox, wheel">
+        <rect id="cBlock" x="8" y="56" width="34" height="42" rx="5"/>
+        <g id="cCrankG"><circle cx="25" cy="77" r="11" fill="none" stroke="var(--engine)" stroke-width="2.4"/>
+          <line id="cCrankLine" x1="25" y1="77" x2="25" y2="68" stroke="var(--engine)" stroke-width="2.4" stroke-linecap="round"/>
+        </g>
+        <line x1="42" y1="77" x2="48" y2="77" stroke="var(--track)" stroke-width="2"/>
+        <rect id="cPlateA" x="48" y="63" width="8" height="28" rx="2" fill="var(--panel)" stroke="var(--clutch)" stroke-width="2"/>
+        <rect id="cPlateB" x="76" y="63" width="8" height="28" rx="2" fill="var(--panel)" stroke="var(--clutch)" stroke-width="2"/>
+        <line id="cSpring" x1="62" y1="77" x2="74" y2="77" stroke="var(--clutch)" stroke-width="2"/>
+        <line id="cShaft" x1="84" y1="77" x2="150" y2="92"/>
+        <rect x="88" y="58" width="46" height="40" rx="6" fill="none" stroke="var(--box)" stroke-width="2"/>
+        <circle id="cGear" cx="111" cy="78" r="11" fill="var(--panel)" stroke="var(--box)" stroke-width="2.5"/>
+        <g id="cWheelG"><circle id="cWheel" cx="176" cy="94" r="21"/>
+          <g id="cSpokes"><line x1="176" y1="94" x2="176" y2="75"/><line x1="176" y1="94" x2="176" y2="113"/>
+            <line x1="176" y1="94" x2="157" y2="94"/><line x1="176" y1="94" x2="195" y2="94"/></g>
+          <circle cx="176" cy="94" r="3.5" fill="var(--wheel)"/></g>
+        <text class="mlabel" id="cLabelEngine" x="25" y="48" text-anchor="middle" fill="var(--engine)">engine</text>
+        <text class="mlabel" id="cLabelClutch" x="66" y="48" text-anchor="middle" fill="var(--clutch)">clutch</text>
+        <text class="mlabel" id="cLabelGear" x="111" y="48" text-anchor="middle" fill="var(--box)">gearbox</text>
+        <text class="mlabel" id="cLabelWheel" x="176" y="64" text-anchor="middle" fill="var(--wheel)">wheel</text>
+        <text class="mlabel" id="cLabelNote" x="104" y="138" text-anchor="middle" fill="var(--muted)">engine turning</text>
+      </svg>
+    </div>
+  </div>
+  <ul class="maps" id="bridgeMaps"></ul>
+  <p id="bridgeWhy" class="muted" style="font-size:13.5px"></p>
+</section>
+
+<!-- ============ WHY SHIFT AT ALL ============ -->
+<section class="card" aria-labelledby="whytitle">
+  <h2 id="whytitle">Why do I have to shift at all?</h2>
+  <p>One gear cannot do everything. A <b>tall</b> gear turns the wheels lots of times for every
+  turn of the engine, so you go fast &mdash; but there is very little left to push with. A
+  <b>short</b> gear pushes hard and the engine races to the top of its range.</p>
+  <p>The engine is happiest between about <b>1,500 and 3,500 rpm</b>. That stretch is the
+  <b>power band</b>, and shifting is just how you keep the engine inside it while the road speed
+  changes underneath you.</p>
+      <svg class="strip" id="strip" viewBox="0 0 400 142" role="img"
+       aria-label="Engine speed strip showing the happy band from 1,500 to 3,500 rpm">
+    <text class="slabel" x="200" y="12" text-anchor="middle" fill="var(--bandline)">happy band 1,500&ndash;3,500 rpm</text>
+    <line id="stripBandLine" x1="101" y1="18" x2="214" y2="18" stroke="var(--bandline)" stroke-width="2"/>
+    <rect id="stripBand" x="101" y="24" width="113" height="20" rx="6"/>
+    <line id="stripTrack" x1="16" y1="34" x2="384" y2="34"/>
+    <text class="slabel" x="101" y="58" text-anchor="middle" fill="var(--bandline)">1,500</text>
+    <text class="slabel" x="214" y="58" text-anchor="middle" fill="var(--bandline)">3,500</text>
+    <g id="stripMarks"></g>
+    <line id="stripNeedle" x1="16" y1="72" x2="16" y2="20" stroke="var(--engine)" stroke-width="3"/>
+    <circle id="stripNeedleDot" cx="16" cy="72" r="5" fill="var(--engine)"/>
+    <text class="sval" id="stripNow" x="200" y="77" text-anchor="middle">now: 800 rpm</text>
+  </svg>
+  <p class="muted" style="font-size:13px">The scale above runs from 0 to 6,500 rpm. Drive the car and
+  watch the numbers move: each mark turns green when that gear would keep the engine inside the happy
+  band. Pick the green one.</p>
+  <p class="synthetic">Synthetic figures: ratios 3.5 / 2.0 / 1.4 / 1.0 / 0.8, final drive 4.0,
+  0.62 m tyre. Nothing here measures a real car.</p>
+  <table id="ratioTable">
+    <caption class="visually-hidden">Gear arithmetic</caption>
+    <thead><tr><th scope="col">Gear</th><th scope="col">Ratio</th>
+      <th scope="col">Engine turns per wheel turn</th><th scope="col">Speed at 3,000 rpm</th>
+      <th scope="col">Engine at 15 km/h</th></tr></thead>
+    <tbody><tr><th scope="row">1st</th><td>3.5</td><td>14.0 : 1</td><td>25 km/h</td><td>1797</td></tr>
+      <tr><th scope="row">2nd</th><td>2.0</td><td>8.0 : 1</td><td>44 km/h</td><td>1027</td></tr>
+      <tr><th scope="row">3rd</th><td>1.4</td><td>5.6 : 1</td><td>63 km/h</td><td>719</td></tr>
+      <tr><th scope="row">4th</th><td>1.0</td><td>4.0 : 1</td><td>88 km/h</td><td>513</td></tr>
+      <tr><th scope="row">5th</th><td>0.8</td><td>3.2 : 1</td><td>110 km/h</td><td>411</td></tr>
+      <tr><th scope="row">Reverse</th><td>3.3</td><td>13.2 : 1</td><td>27 km/h</td><td>1694</td></tr></tbody>
+  </table>
+</section>
+
+<!-- ============ WHAT YOUR HANDS AND FEET DO ============ -->
+<section class="card" aria-labelledby="howtitle">
+  <h2 id="howtitle">What your hands and feet do</h2>
+  <p>Five things you will do all the time. Each one has a <b>try it</b> button that sets the car
+  up for you.</p>
+  <div class="howto" id="howto"></div>
+</section>
+
+<!-- ============ COMMON MISTAKES ============ -->
+<section class="card" aria-labelledby="mistaketitle">
+  <h2 id="mistaketitle">Five things everyone does at first</h2>
+  <div class="howto" id="mistakes"></div>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section class="card" aria-labelledby="glosstitle">
+  <h2 id="glosstitle">Glossary</h2>
+  <div class="gloss" id="gloss"></div>
+  <p class="synthetic">Synthetic explainer. Nothing on this page measures a real car.</p>
+</section>
+
+</main>
+
+<footer>one self-contained page, works offline, no network calls
+  <span>Every figure on this page is synthetic: a made-up car with round numbers.</span>
+  <span id="tally"></span></footer>
+
+<script>
+// model.mjs -- the whole simulation of the manual-transmission explainer, as
+// pure functions. No DOM, no timers, no randomness: every number here is a
+// round illustrative figure chosen so the story is easy to see, not a
+// measurement of any real car. The browser page embeds this exact text
+// (bin/build.py strips the `export ` keywords) so what you see on the phone
+// and what the tests check can never drift apart.
+
+const IDLE_RPM = 800;        // engine idles here
+const STALL_RPM = 0;         // engine has stopped
+const REDLINE_RPM = 6500;    // tacho full scale
+const POWER_BAND_LO = 1500;  // engine is happy from here ...
+const POWER_BAND_HI = 3500;  // ... to here
+
+// Gear ratios as "engine turns per wheel turn", before the final drive.
+// Reverse is negative because an extra idler gear flips the output backwards.
+const GEAR_RATIOS = { 1: 3.5, 2: 2.0, 3: 1.4, 4: 1.0, 5: 0.8, R: -3.3, N: 0 };
+const FINAL_DRIVE = 4.0;     // the last reduction, at the back axle
+const TYRE_DIAMETER_M = 0.62;
+const TYRE_RADIUS_M = TYRE_DIAMETER_M / 2;
+const GEAR_ORDER = ['1', '2', '3', '4', '5'];
+
+// Clutch: the pedal position at which the plates are apart, and the position
+// at which the spring has them hard against each other. 0 = foot off the
+// pedal (clamped), 1 = pedal on the floor (apart).
+const SEPARATED_PEDAL = 0.72;
+const CLAMPED_PEDAL = 0.18;
+const LOCK_ENGAGEMENT = 0.995; // at or above this, the two plates move as one
+const BITE_ENGAGEMENT = 0.5;   // the middle of the slipping zone
+
+// Inertia and torque figures. Deliberately round.
+const CAR_MASS_KG = 1150;     // a small hatchback, round figure
+const ENGINE_INERTIA = 0.45;   // kg m^2, engine plus flywheel
+// The wheels have to carry the whole car's mass once it is reflected through
+// the tyre, plus a little for spinning wheels and shafts.
+const WHEEL_INERTIA = CAR_MASS_KG * TYRE_RADIUS_M * TYRE_RADIUS_M + 8;
+const CLUTCH_CAPACITY = 420;   // N m of grip once fully clamped
+const SLIP_REF_RPM = 40;       // slip speed at which the bite zone grips
+const IDLE_ASSIST = 90;        // N m the idle control adds at a dead stop
+const ENGINE_LOSS_BASE = 12;   // N m the engine eats just turning over
+const ENGINE_LOSS_PER_RPM = 0.0025; // extra loss as it spins faster
+const FUEL_LOW_FRACTION = 0.7; // a light press still makes real torque
+const REV_LIMIT_RPM = 6000;  // fuel cut above here
+const LIMITER_SLOPE = 0.9;    // N m of braking per rpm past the cut
+const STALL_DELAY_S = 0.35;    // how long the stall rule must be true
+const BOG_RPM = 250;           // this low with the gas open is a stall
+const BOG_DELAY_S = 0.5;       // and it has to stay low for this long
+const STICK_WINDOW_RPM = 150;  // slip below this counts as locked, above it the plates slip
+const ROLL_RESISTANCE_N = 45;  // N, tyres and bearings
+const DRAG_K = 0.8;            // N per (m/s)^2, air
+const BRAKE_TORQUE_NM = 2800;  // N m at the wheels, full brake
+
+// Wide-open-throttle torque curve, N m, by rpm. Straight lines between points.
+const TORQUE_CURVE = [
+  [0, 60], [800, 95], [1500, 150], [2500, 190],
+  [3500, 200], [4500, 198], [5500, 175], [6500, 140],
+];
+
+// The four steps of the bicycle bridge, in order. Shared by the page and the
+// tests so the words and the drawing cannot disagree.
+const BRIDGE_STEPS = [
+  {
+    n: 1,
+    bike: 'You pedal. Your legs push the big sprocket round.',
+    car: 'The engine burns fuel and turns a shaft inside the gearbox bell.',
+    maps: ['your legs = the pistons', 'bike pedal = the gas pedal'],
+    why: 'Something has to spin before anything can move.',
+  },
+  {
+    n: 2,
+    bike: 'A small sprocket at the back turns the wheel more times than the big one.',
+    car: 'A tall first gear turns the wheels fewer times than the engine turns.',
+    maps: ['the little back sprocket = the gear that drives the wheel', 'the big front sprocket = 1st gear'],
+    why: 'Gears trade turning speed for pulling force.',
+  },
+  {
+    n: 3,
+    bike: 'Lift your feet off the pedals and the wheel keeps going on its own.',
+    car: 'Push the clutch pedal down and the engine keeps running on its own.',
+    maps: ['feet off the pedals = clutch pedal pressed down', 'freewheeling wheel = engine still spinning'],
+    why: 'Two things turning separately instead of one thing driving the other.',
+  },
+  {
+    n: 4,
+    bike: 'Your feet back on the pedals, the chain takes up again and pulls.',
+    car: 'Let the clutch pedal up and the plates squeeze and start to pull.',
+    maps: ['pedalling again = clutch pedal let up', 'chain pulling = the clutch bite'],
+    why: 'That grabby moment is the bite point, and it is the whole skill.',
+  },
+];
+
+function clamp(v, lo, hi) {
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
+// --- gears ---------------------------------------------------------------
+
+function totalRatio(gear) {
+  const g = GEAR_RATIOS[gear];
+  if (g === undefined) throw new Error('unknown gear: ' + gear);
+  return g * FINAL_DRIVE;
+}
+
+function isForwardGear(gear) {
+  return GEAR_ORDER.indexOf(gear) !== -1;
+}
+
+function wheelRpmAtEngineRpm(engineRpm, gear) {
+  if (gear === 'N') return null;
+  return engineRpm / totalRatio(gear);
+}
+
+function engineRpmAtWheelRpm(wheelRpm, gear) {
+  if (gear === 'N') return null;
+  return wheelRpm * totalRatio(gear);
+}
+
+function speedKph(wheelRpm) {
+  return Math.abs(wheelRpm) * 2 * Math.PI * TYRE_RADIUS_M * 3.6 / 60;
+}
+
+function speedKphAtEngineRpm(engineRpm, gear) {
+  const w = wheelRpmAtEngineRpm(engineRpm, gear);
+  return w === null ? 0 : speedKph(w);
+}
+
+function wheelRpmForSpeed(kph) {
+  return kph * 60 / (2 * Math.PI * TYRE_RADIUS_M * 3.6);
+}
+
+function rpmInGearAtSpeed(kph, gear) {
+  const r = engineRpmAtWheelRpm(wheelRpmForSpeed(kph), gear);
+  return r === null ? null : Math.abs(r);
+}
+
+// --- clutch --------------------------------------------------------------
+
+// engagement: 0 = plates apart (pedal on the floor), 1 = clamped (foot off).
+// Between the two it rises smoothly, and everything in between is the bite
+// zone where the plates rub and slip.
+function engagementFromPedal(pedal) {
+  const p = clamp(pedal, 0, 1);
+  if (p >= SEPARATED_PEDAL) return 0;
+  if (p <= CLAMPED_PEDAL) return 1;
+  const t = (SEPARATED_PEDAL - p) / (SEPARATED_PEDAL - CLAMPED_PEDAL);
+  return t * t * (3 - 2 * t);
+}
+
+function pedalForEngagement(engagement) {
+  const target = clamp(engagement, 0, 1);
+  let lo = CLAMPED_PEDAL;
+  let hi = SEPARATED_PEDAL;
+  for (let i = 0; i < 40; i += 1) {
+    const mid = (lo + hi) / 2;
+    if (engagementFromPedal(mid) < target) hi = mid; else lo = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+function clutchZone(engagement) {
+  if (engagement <= 0) return 'off';
+  if (engagement >= LOCK_ENGAGEMENT) return 'locked';
+  return 'bite';
+}
+
+function zoneName(zone) {
+  if (zone === 'off') return 'Disconnected';
+  if (zone === 'locked') return 'Connected';
+  return 'Slipping (the bite point)';
+}
+
+function slipRpm(engineRpm, wheelRpm, gear) {
+  if (gear === 'N') return null;
+  return engineRpm - wheelRpm * totalRatio(gear);
+}
+
+// isSlipping is what you can see and hear: two sides turning at different
+// speeds with the plates touching.
+function isSlipping(state) {
+  if (state.gear === 'N') return false;
+  const e = engagementFromPedal(state.pedal);
+  if (clutchZone(e) !== 'bite') return false;
+  const s = slipRpm(state.engineRpm, state.wheelRpm, state.gear);
+  return s !== null && Math.abs(s) > 1;
+}
+
+// --- torque --------------------------------------------------------------
+
+function engineTorqueAtRpm(rpm) {
+  const x = clamp(rpm, 0, REDLINE_RPM);
+  if (x <= TORQUE_CURVE[0][0]) return TORQUE_CURVE[0][1];
+  for (let i = 1; i < TORQUE_CURVE.length; i += 1) {
+    const [x1, y1] = TORQUE_CURVE[i - 1];
+    const [x2, y2] = TORQUE_CURVE[i];
+    if (x <= x2) return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+  }
+  return TORQUE_CURVE[TORQUE_CURVE.length - 1][1];
+}
+
+// Net engine torque. Throttle opens it; closed it turns into engine braking.
+// Below idle with the throttle shut, the idle control adds just enough fuel
+// to sit at IDLE_RPM, which is why an idling engine in neutral stays alive.
+function engineTorque(rpm, throttle) {
+  const t = clamp(throttle, 0, 1);
+  if (t < 0.02 && rpm < IDLE_RPM) {
+    return IDLE_ASSIST * (IDLE_RPM - rpm) / IDLE_RPM;
+  }
+  const wot = engineTorqueAtRpm(rpm);
+  const losses = ENGINE_LOSS_BASE + ENGINE_LOSS_PER_RPM * clamp(rpm, 0, REDLINE_RPM);
+  const fuel = t * wot * (FUEL_LOW_FRACTION + (1 - FUEL_LOW_FRACTION) * t);
+  // Above the limiter the fuel is cut, which is why a revved engine bounces
+  // off the top instead of sailing past it.
+  const limiter = rpm > REV_LIMIT_RPM ? -(rpm - REV_LIMIT_RPM) * LIMITER_SLOPE : 0;
+  return fuel - losses + limiter;
+}
+
+function clutchTorqueCapacity(engagement) {
+  return CLUTCH_CAPACITY * clamp(engagement, 0, 1);
+}
+
+// Torque through the plates. Zero when the pedal is down (plates apart) or in
+// neutral, capped by how hard the spring is squeezing, and it grows with slip
+// so it stays smooth.
+function transmittedTorque(engagement, slip) {
+  if (slip === null || slip === undefined) return 0;
+  const e = clamp(engagement, 0, 1);
+  if (e <= 0) return 0;
+  const cap = clutchTorqueCapacity(e);
+  const want = Math.tanh(slip / SLIP_REF_RPM) * cap;
+  return clamp(want, -cap, cap);
+}
+
+function roadLoadTorque(wheelRpm, brake) {
+  const v = wheelRpm * 2 * Math.PI * TYRE_RADIUS_M / 60; // m/s, signed
+  const dir = v > 0.02 ? 1 : v < -0.02 ? -1 : 0;
+  if (dir === 0) return 0;
+  const rolling = ROLL_RESISTANCE_N * TYRE_RADIUS_M * dir;
+  const drag = DRAG_K * v * Math.abs(v) * TYRE_RADIUS_M;
+  return rolling + drag + dir * BRAKE_TORQUE_NM * clamp(brake || 0, 0, 1);
+}
+
+// --- the stall rule ------------------------------------------------------
+
+// The one rule the driver has to feel: in a gear, clutch up, no gas. Either the
+// car is barely moving or the clutch has already dragged the engine down to
+// nothing. Any one of those four not true and the engine survives.
+function shouldStall(state) {
+  if (state.stalled) return false;
+  if (state.gear === 'N') return false;
+  if (clamp(state.throttle, 0, 1) >= 0.04) return false;
+  if (engagementFromPedal(state.pedal) < LOCK_ENGAGEMENT) return false;
+  const carStill = speedKph(state.wheelRpm) <= 3;
+  const engineLow = state.engineRpm <= IDLE_RPM * 0.95;
+  return carStill || engineLow;
+}
+
+// The other way to stop the engine: let the clutch out too fast with the gas
+// already open. The plates slam the whole car's weight onto the crank and the
+// engine is dragged down before it can make anything.
+function isBogged(state) {
+  if (state.stalled) return false;
+  if (state.gear === 'N') return false;
+  if (state.engineRpm > BOG_RPM) return false;
+  if (clamp(state.throttle, 0, 1) <= 0.04) return false;
+  return engagementFromPedal(state.pedal) > 0;
+}
+
+function canRestart(state, input) {
+  if (!state.stalled) return false;
+  const safeGear = state.gear === 'N' || engagementFromPedal(input.pedal) < BITE_ENGAGEMENT;
+  return clamp(input.throttle, 0, 1) > 0.05 && safeGear;
+}
+
+// --- power band ----------------------------------------------------------
+
+function powerBand(rpm) {
+  if (rpm < POWER_BAND_LO) return 'low';
+  if (rpm <= POWER_BAND_HI) return 'band';
+  return 'high';
+}
+
+function powerBandNote(rpm) {
+  const band = powerBand(rpm);
+  if (band === 'band') return 'in the happy band';
+  if (band === 'low') return 'sluggish, wait for it';
+  return 'past the happy band, no more pull';
+}
+
+// The tallest gear that still keeps the engine above the bottom of the band.
+function gearForSpeed(kph) {
+  let best = '1';
+  for (const g of GEAR_ORDER) {
+    const rpm = rpmInGearAtSpeed(kph, g) || 0;
+    if (rpm >= POWER_BAND_LO) best = g;
+  }
+  return best;
+}
+
+function bridgeStep(n) {
+  const step = BRIDGE_STEPS.find((s) => s.n === n);
+  if (!step) throw new Error('no bridge step ' + n);
+  return step;
+}
+
+// --- the simulation ------------------------------------------------------
+
+function initialState() {
+  return {
+    engineRpm: IDLE_RPM,
+    wheelRpm: 0,
+    gear: 'N',
+    pedal: 1,        // clutch pedal on the floor: ready to pull away
+    throttle: 0,
+    brake: 0,
+    stalled: false,
+    stallClock: 0,
+    distanceM: 0,
+    engineAngle: 0,
+    wheelAngle: 0,
+  };
+}
+
+const SUBSTEP_S = 1 / 480;
+// Angles are integrated in rad/s, but every rpm figure in here is a real rpm,
+// so every acceleration has to be converted on the way in.
+const RPM_PER_RAD_S = 60 / (2 * Math.PI);
+
+function integrate(state, input, dt) {
+  const s = {
+    engineRpm: state.engineRpm,
+    wheelRpm: state.wheelRpm,
+    gear: state.gear,
+    pedal: clamp(input.pedal, 0, 1),
+    throttle: clamp(input.throttle, 0, 1),
+    brake: clamp(input.brake || 0, 0, 1),
+    stalled: state.stalled,
+    stallClock: state.stallClock,
+    distanceM: state.distanceM,
+    engineAngle: state.engineAngle,
+    wheelAngle: state.wheelAngle,
+  };
+
+  if (s.stalled) {
+    s.engineRpm = 0;
+    s.stallClock += dt;
+    if (canRestart(state, input)) {
+      s.stalled = false;
+      s.stallClock = 0;
+      s.engineRpm = IDLE_RPM;
+    } else {
+      // a stopped engine cannot drive anything, so only road load and the
+      // brake act on the wheels
+      const stalledLoad = roadLoadTorque(s.wheelRpm, s.brake);
+      s.wheelRpm += (-stalledLoad / WHEEL_INERTIA) * RPM_PER_RAD_S * dt;
+      if (Math.abs(s.wheelRpm) < 0.02 && s.brake > 0.05) s.wheelRpm = 0;
+      s.wheelAngle += (s.wheelRpm * dt) / 60;
+      return s;
+    }
+  }
+
+  const ratio = totalRatio(s.gear);
+  const inDrive = s.gear !== 'N';
+  const engagement = engagementFromPedal(s.pedal);
+  const load = roadLoadTorque(s.wheelRpm, s.brake);
+  const torque = engineTorque(s.engineRpm, s.throttle);
+
+  let wheelOmegaDot = 0;
+  if (inDrive) {
+    const slip = s.engineRpm - s.wheelRpm * ratio;
+    let t = transmittedTorque(engagement, slip);
+    // Friction can never do more than bring the two sides to the same speed in
+    // one step. That single rule gives the locked case its rigid feel, keeps
+    // the solver from oscillating, and stops the plates from passing a torque
+    // that would reverse the slip. slip/dt is what makes it work when the two
+    // sides start out at completely different speeds.
+    // A real clutch has springs and damper plates, so it cannot snatch 800 rpm
+    // of mismatch in one step. Only once the slip is already small does it
+    // behave like the solid link that keeps a driven car from hunting.
+    if (Math.abs(slip) <= STICK_WINDOW_RPM) {
+      const denom = 1 / ENGINE_INERTIA + (ratio * ratio) / WHEEL_INERTIA;
+      const slipRadPerS = slip * Math.PI / 30;
+      const stick = ((slipRadPerS / dt) + torque / ENGINE_INERTIA
+        + (ratio * load) / WHEEL_INERTIA) / denom;
+      if (Math.abs(t) > Math.abs(stick) && Math.sign(stick) === Math.sign(t)) t = stick;
+    }
+    s.engineRpm += ((torque - t) / ENGINE_INERTIA) * RPM_PER_RAD_S * dt;
+    wheelOmegaDot += (t * ratio - load) / WHEEL_INERTIA;
+  } else {
+    s.engineRpm += (torque / ENGINE_INERTIA) * RPM_PER_RAD_S * dt;
+    wheelOmegaDot += -load / WHEEL_INERTIA;
+  }
+
+  s.engineRpm = Math.max(0, s.engineRpm);
+  const before = s.wheelRpm;
+  s.wheelRpm += wheelOmegaDot * RPM_PER_RAD_S * dt;
+  // Brakes hold a car still; they never push it backwards.
+  if (s.brake > 0.05) {
+    if (Math.abs(s.wheelRpm) < 1) s.wheelRpm = 0;
+    else if (before !== 0 && Math.sign(before) !== Math.sign(s.wheelRpm)) s.wheelRpm = 0;
+  }
+  s.distanceM += s.wheelRpm * 2 * Math.PI * TYRE_RADIUS_M / 60 * dt;
+
+  // The stall rule is watched every substep, and only bites after it has been
+  // true for a moment, so a quick lift of the clutch does not kill the engine.
+  if (shouldStall(s) || isBogged(s)) {
+    s.stallClock += dt;
+    if (s.stallClock >= STALL_DELAY_S) {
+      s.stalled = true;
+      s.stallClock = STALL_DELAY_S;
+      s.engineRpm = 0;
+      s.wheelRpm = 0;
+    }
+  } else {
+    s.stallClock = 0;
+  }
+
+  const clampRpm = (v, hi) => (v < 0 ? 0 : v > hi ? hi : v);
+  s.engineRpm = clampRpm(s.engineRpm, REDLINE_RPM);
+  // both angles are kept as whole revolutions, which is what a needle wants
+  s.wheelAngle += (s.wheelRpm * dt) / 60;
+  s.engineAngle += (s.engineRpm * dt) / 60;
+  return s;
+}
+
+// One display frame. dt is clamped so a backgrounded tab cannot explode it.
+function step(state, input, dt) {
+  const d = clamp(dt, 0, 0.05);
+  let s = state;
+  const n = Math.max(1, Math.ceil(d / SUBSTEP_S));
+  for (let i = 0; i < n; i += 1) s = integrate(s, input, d / n);
+  return s;
+}
+
+// A single frame of everything the page needs to draw, in one object.
+function snapshot(state) {
+  const engagement = engagementFromPedal(state.pedal);
+  const zone = clutchZone(engagement);
+  const ratio = state.gear === 'N' ? 0 : totalRatio(state.gear);
+  return {
+    engineRpm: state.engineRpm,
+    wheelRpm: state.wheelRpm,
+    kph: speedKph(state.wheelRpm),
+    gear: state.gear,
+    ratio: ratio,
+    pedal: state.pedal,
+    engagement: engagement,
+    zone: zone,
+    zoneName: zoneName(zone),
+    slipping: isSlipping(state),
+    bogging: isBogged(state),
+    slipRpm: slipRpm(state.engineRpm, state.wheelRpm, state.gear),
+    band: powerBand(state.engineRpm),
+    bandNote: powerBandNote(state.engineRpm),
+    stalled: state.stalled,
+    distanceM: state.distanceM,
+  };
+}
+
+
+/* ============================ page code ============================ */
+(function () {
+  'use strict';
+
+  // ---------- colour-free helpers ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var reduceQuery = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  var motionAllowed = !(reduceQuery && reduceQuery.matches);
+
+  // ---------- the live machine ----------
+  var state = initialState();
+  var ctl = { pedal: 1, throttle: 0, brake: 0, gear: 'N' };
+
+  // A link can set the car up, e.g. index.html#gear=3&kph=70&pedal=0.45&throttle=0.5
+  // or &pause=1 to hold it still. Handy for bookmarking and for screenshots.
+  var themeStart = null;
+  var presetToApply = null;
+  (function readHash() {
+    var h = String(window.location.hash || '').replace(/^#/, '');
+    if (!h) return;
+    var want = {};
+    h.split('&').forEach(function (pair) {
+      var kv = pair.split('=');
+      if (kv.length === 2) want[kv[0]] = kv[1];
+    });
+    if (want.pause !== undefined) { motionAllowed = false; }
+    if (want.theme === 'dark' || want.theme === 'light') {
+      document.documentElement.setAttribute('data-theme', want.theme);
+      themeStart = want.theme;
+    }
+    if (want.gear && GEAR_RATIOS[want.gear] !== undefined) ctl.gear = want.gear;
+    if (want.pedal !== undefined) ctl.pedal = clamp(Number(want.pedal), 0, 1);
+    if (want.throttle !== undefined) ctl.throttle = clamp(Number(want.throttle), 0, 1);
+    if (want.brake !== undefined) ctl.brake = clamp(Number(want.brake), 0, 1);
+    state.gear = ctl.gear;
+    state.pedal = ctl.pedal;
+    state.throttle = ctl.throttle;
+    state.brake = ctl.brake;
+    if (want.kph !== undefined) {
+      var wheel = wheelRpmForSpeed(Number(want.kph));
+      state.wheelRpm = wheel;
+      state.distanceM = wheel * 1.2;
+      var rpm = engineRpmAtWheelRpm(wheel, ctl.gear);
+      state.engineRpm = rpm === null ? IDLE_RPM : clamp(rpm, IDLE_RPM, REDLINE_RPM - 400);
+    }
+    // an explicit rpm lets you hold the clutch open on a mismatch, which is
+    // what makes the bite point visible in a still picture
+    if (want.rpm !== undefined) {
+      state.engineRpm = clamp(Number(want.rpm), 0, REDLINE_RPM);
+    }
+    if (want.try !== undefined) presetToApply = Number(want.try);
+  }());
+
+  var clutchEl = $('clutch'), gasEl = $('gas'), brakeEl = $('brake');
+  var rpmVal = $('rpmVal'), kphVal = $('kphVal');
+  var tachNeedle = $('tachNeedle'), speedNeedle = $('speedNeedle'), tachBand = $('tachBand');
+  var crank = $('crank'), plate = $('plate'), gapMark = $('gapMark');
+  var spring = $('spring'), slipGlow = $('slipGlow'), gearIn = $('gearIn'), gearOut = $('gearOut');
+  var gearIdler = $('gearIdler'), gearLabel = $('gearLabel'), wheelG = $('wheel');
+  var roadGroup = $('roadGroup'), machineNote = $('machineNote'), blockBody = $('blockBody');
+  var chipClutch = $('chipClutch'), chipGear = $('chipGear'), chipBand = $('chipBand');
+  var chipStall = $('chipStall'), clutchOut = $('clutchOut'), gasOut = $('gasOut');
+  var brakeOut = $('brakeOut'), gearHint = $('gearHint');
+  var stripNeedle = $('stripNeedle'), stripNeedleDot = $('stripNeedleDot'), stripNow = $('stripNow');
+  var stripMarks = $('stripMarks'), motionBtn = $('motionBtn'), themeBtn = $('themeBtn');
+
+  // road dashes, built once and then slid sideways by whole pixels
+  var DASH = 26;
+  (function () {
+    var html = '';
+    for (var d = -2; d < 20; d += 1) {
+      html += '<line x1="' + (d * DASH) + '" x2="' + (d * DASH + 13) + '" y1="152" y2="152"/>';
+    }
+    roadGroup.innerHTML = html;
+  }());
+  // teeth on the two gears, redrawn whenever the gear changes
+  function drawTeeth(g, cx, cy, r, count) {
+    var html = '';
+    for (var i = 0; i < count; i += 1) {
+      var a = (i / count) * Math.PI * 2;
+      var x1 = cx + Math.cos(a) * r, y1 = cy + Math.sin(a) * r;
+      var x2 = cx + Math.cos(a) * (r + 3.2), y2 = cy + Math.sin(a) * (r + 3.2);
+      html += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1)
+        + '" y2="' + y2.toFixed(1) + '"/>';
+    }
+    g.innerHTML = html;
+  }
+  function setGears(gear) {
+    if (gear === 'N') {
+      gearIn.setAttribute('r', '11'); gearOut.setAttribute('r', '11');
+      gearIdler.setAttribute('visibility', 'hidden');
+      drawTeeth($('gearTeethIn'), 176, 66, 11, 8);
+      drawTeeth($('gearTeethOut'), 176, 100, 11, 8);
+      gearLabel.textContent = 'neutral';
+      return;
+    }
+    var mag = Math.abs(GEAR_RATIOS[gear]);
+    var d = 34;
+    var rin = d / (1 + mag);
+    var rout = d - rin;
+    gearIn.setAttribute('r', rin.toFixed(1));
+    gearOut.setAttribute('r', rout.toFixed(1));
+    if (gear === 'R') {
+      gearIdler.setAttribute('r', (17 - rin).toFixed(1));
+      gearIdler.setAttribute('visibility', 'visible');
+      gearLabel.textContent = 'R via idler';
+    } else {
+      gearIdler.setAttribute('visibility', 'hidden');
+      gearLabel.textContent = gear + (gear === '1' ? 'st' : gear === '2' ? 'nd' : gear === '3' ? 'rd' : 'th');
+    }
+    drawTeeth($('gearTeethIn'), 176, 66, rin, Math.max(6, Math.round(rin * 1.6)));
+    drawTeeth($('gearTeethOut'), 176, 100, rout, Math.max(6, Math.round(rout * 1.6)));
+  }
+  setGears('N');
+
+  // tachometer face
+  function polar(cx, cy, r, deg) {
+    var a = (deg - 90) * Math.PI / 180;
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  }
+  function arcPath(cx, cy, r, from, to) {
+    var a = polar(cx, cy, r, from), b = polar(cx, cy, r, to);
+    var large = Math.abs(to - from) > 180 ? 1 : 0;
+    return 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + ' A' + r + ' ' + r + ' 0 ' + large
+      + ' 1 ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
+  }
+  var TACH_FROM = -120, TACH_TO = 120, TACH_SPAN = TACH_TO - TACH_FROM;
+  tachBand.setAttribute('d', arcPath(60, 54, 48,
+    TACH_FROM + TACH_SPAN * (POWER_BAND_LO / REDLINE_RPM),
+    TACH_FROM + TACH_SPAN * (POWER_BAND_HI / REDLINE_RPM)));
+  var SPEED_FULL = 180;
+  tachNeedle.setAttribute('transform', 'rotate(' + (TACH_FROM + TACH_SPAN * (IDLE_RPM / REDLINE_RPM))
+    + ' 60 54)');
+  speedNeedle.setAttribute('transform', 'rotate(' + TACH_FROM + ' 60 54)');
+
+  // power strip marks, one per gear
+  var markFor = {};
+  (function () {
+    var html = '';
+    ['1', '2', '3', '4', '5', 'R'].forEach(function (g, i) {
+      var x = 56 + i * 60;
+      html += '<line id="mark' + g + '" class="stripMark" x1="' + x + '" x2="' + x
+        + '" y1="92" y2="108"/>';
+      html += '<text class="sval" x="' + x + '" y="121" text-anchor="middle">' + g + '</text>';
+      html += '<text class="slabel rpmTag" x="' + x + '" y="135" text-anchor="middle">-</text>';
+    });
+    stripMarks.innerHTML = html;
+    var tags = stripMarks.querySelectorAll('text.rpmTag');
+    ['1', '2', '3', '4', '5', 'R'].forEach(function (g, i) {
+      markFor[g] = { line: document.getElementById('mark' + g), rpmText: tags[i] };
+    });
+  }());
+
+  // ---------- wording helpers ----------
+  function ordinal(g) {
+    if (g === 'R') return 'Reverse';
+    if (g === 'N') return 'Neutral';
+    return g + (g === '1' ? 'st' : g === '2' ? 'nd' : g === '3' ? 'rd' : 'th');
+  }
+  function pedalWords(p) {
+    if (p >= SEPARATED_PEDAL) return 'down: engine free';
+    if (p <= CLAMPED_PEDAL) return 'up: locked';
+    if (Math.abs(p - 0.45) < 0.02) return 'the bite point';
+    return Math.round(p * 100) + '% down';
+  }
+  function gearWords(g) {
+    if (g === 'N') return 'Neutral: nothing is connected.';
+    if (g === 'R') return 'Reverse: an extra idler gear turns the wheels backwards.';
+    return ordinal(g) + ' gear: the engine turns ' + (Math.abs(GEAR_RATIOS[g]) * FINAL_DRIVE).toFixed(1)
+      + ' times for every turn of the wheels.';
+  }
+
+  // ---------- drawing ----------
+  var lastGearDrawn = 'N';
+  function draw(s) {
+    rpmVal.textContent = Math.round(s.engineRpm);
+    kphVal.textContent = Math.round(s.kph);
+    tachNeedle.setAttribute('transform',
+      'rotate(' + (TACH_FROM + TACH_SPAN * clamp(s.engineRpm / REDLINE_RPM, 0, 1)).toFixed(1) + ' 60 54)');
+    speedNeedle.setAttribute('transform',
+      'rotate(' + (TACH_FROM + TACH_SPAN * clamp(s.kph / SPEED_FULL, 0, 1)).toFixed(1) + ' 60 54)');
+
+    // engine
+    crank.setAttribute('transform',
+      'rotate(' + (state.engineAngle * 360).toFixed(1) + ' 32 82)');
+    blockBody.setAttribute('stroke', s.stalled ? 'var(--bad)' : 'var(--engine)');
+    flywheel.setAttribute('stroke', s.stalled ? 'var(--bad)' : 'var(--engine)');
+
+    // clutch: the pressure plate slides along to squeeze or release
+    var gap = 2 + (1 - s.engagement) * 16;
+    plate.setAttribute('x', (64 + 12 + gap).toFixed(1));
+    spring.setAttribute('x1', (64 + 12 + gap + 12).toFixed(1));
+    gapMark.setAttribute('x1', '76');
+    gapMark.setAttribute('x2', (64 + 12 + gap).toFixed(1));
+    slipGlow.setAttribute('x', (64 + 12).toFixed(1));
+    slipGlow.setAttribute('width', Math.max(1, gap).toFixed(1));
+    slipGlow.classList.toggle('on', s.slipping);
+    gapMark.setAttribute('opacity', s.zone === 'bite' ? '1' : '0.35');
+
+    // gearbox
+    if (s.gear !== lastGearDrawn) { setGears(s.gear); lastGearDrawn = s.gear; }
+    gearIn.setAttribute('transform',
+      'rotate(' + (state.engineAngle * 360).toFixed(1) + ' 176 66)');
+    var mag = Math.abs(GEAR_RATIOS[s.gear]);
+    var outDeg = s.gear === 'N' ? 0
+      : (state.engineAngle * 360 / mag) * (s.gear === 'R' ? -1 : 1);
+    gearOut.setAttribute('transform', 'rotate(' + outDeg.toFixed(1) + ' 176 100)');
+    gearIdler.setAttribute('transform',
+      'rotate(' + (s.gear === 'R' ? -(state.engineAngle * 360 * (17 / Math.max(4, mag * 1.6))) : 0).toFixed(1) + ' 176 83)');
+    gearIn.setAttribute('stroke', s.gear === 'N' ? 'var(--track)' : 'var(--engine)');
+    gearOut.setAttribute('stroke', s.gear === 'N' ? 'var(--track)' : 'var(--wheel)');
+
+    // wheel and road
+    wheelG.setAttribute('transform',
+      'rotate(' + (state.wheelAngle * 360).toFixed(1) + ' 392 112)');
+    roadGroup.setAttribute('transform',
+      'translate(' + (-((state.wheelAngle * 2 * Math.PI * TYRE_RADIUS_M) % DASH)).toFixed(1) + ' 0)');
+
+    // the one line under the drawing
+    machineNote.textContent = stalledNote(s);
+
+    // chips
+    chipClutch.textContent = 'clutch: ' + s.zoneName.toLowerCase();
+    chipClutch.className = 'chip ' + (s.zone === 'off' ? 'warn' : s.zone === 'bite' ? 'ok' : '');
+    chipGear.textContent = 'gear: ' + (s.gear === 'N' ? 'N' : s.gear) + (s.gear === 'N' ? '' : ' ('
+      + (Math.abs(GEAR_RATIOS[s.gear]) * FINAL_DRIVE).toFixed(1) + ':1)');
+    chipGear.className = 'chip ' + (s.gear === 'N' ? '' : 'ok');
+    chipBand.textContent = 'engine: ' + s.bandNote;
+    chipBand.className = 'chip ' + (s.band === 'band' ? 'ok' : 'warn');
+    chipStall.hidden = !s.stalled;
+
+    // strip
+    var nx = 16 + 368 * clamp(s.engineRpm / REDLINE_RPM, 0, 1);
+    stripNeedle.setAttribute('x1', String(nx.toFixed(1)));
+    stripNeedle.setAttribute('x2', String(nx.toFixed(1)));
+    stripNeedleDot.setAttribute('cx', String(nx.toFixed(1)));
+    stripNow.textContent = 'now: ' + Math.round(s.engineRpm) + ' rpm';
+    var kph = Math.abs(s.kph);
+    ['1', '2', '3', '4', '5', 'R'].forEach(function (g) {
+      var rpm = rpmInGearAtSpeed(kph, g) || 0;
+      var inb = rpm >= POWER_BAND_LO && rpm <= POWER_BAND_HI;
+      markFor[g].line.classList.toggle('inband', inb);
+      markFor[g].rpmText.textContent = rpm > REDLINE_RPM ? 'over' : Math.round(rpm);
+      markFor[g].rpmText.style.fill = inb ? 'var(--bandline)' : 'var(--muted)';
+    });
+
+    // gear hint
+    if (gearHint.dataset.refused === '1') {
+      gearHint.textContent = 'Put the clutch in first: you cannot change gear with the clutch up.';
+      gearHint.className = 'hint bad';
+    } else if (s.stalled) {
+      gearHint.textContent = 'Engine stopped. Press the clutch pedal down and give it some gas to start.';
+      gearHint.className = 'hint bad';
+    } else if (s.slipping) {
+      gearHint.textContent = 'The plates are rubbing: the engine side is turning '
+        + Math.round(Math.abs(s.slipRpm)) + ' rpm faster than the wheels. This is the bite point.';
+      gearHint.className = 'hint warn';
+    } else if (s.zone === 'off' && ctl.gear !== 'N') {
+      gearHint.textContent = gearWords(ctl.gear) + ' The engine is free until you let the clutch up.';
+      gearHint.className = 'hint';
+    } else {
+      gearHint.textContent = gearWords(ctl.gear);
+      gearHint.className = 'hint';
+    }
+    gearHint.dataset.refused = '0';
+  }
+
+  // kept short on purpose: this line has to fit under the drawing on a phone
+  function stalledNote(s) {
+    if (s.stalled) return 'STALLED: in gear, no gas, the engine has stopped';
+    if (s.bogging) return 'the engine is being dragged down: more gas, less clutch';
+    if (s.slipping) return 'clutch slipping: the plates rub, the two sides differ';
+    if (s.zone === 'off') return 'clutch down: the engine spins on its own';
+    if (s.zone === 'bite') return 'clutch part way up: the plates can still slip';
+    if (s.gear === 'N') return 'clutch up in neutral: the engine revs, the wheels do not';
+    if (s.engineRpm < IDLE_RPM) return 'too much clutch, not enough gas: it is bogging';
+    return 'clutch locked: the engine drives the wheels in ' + ordinal(s.gear);
+  }
+
+  // ---------- the bicycle bridge ----------
+  var bridgeStep = 1;
+  var bridgeButtons = [];
+  var bikePhase = 0, bikeWheelRev = 0, bikeCrankRev = 0, bikeWheelRate = 0;
+  var bWheelG = $('bWheelG'), bCrankG = $('bCrankG'), bFoot = $('bFoot');
+  var bLabelCrank = $('bLabelCrank'), bLabelRear = $('bLabelRear'), bLabelChain = $('bLabelChain');
+  var bLabelNote = $('bLabelNote'), cLabelNote = $('cLabelNote');
+  var cPlateA = $('cPlateA'), cPlateB = $('cPlateB'), cGear = $('cGear');
+  var cCrankLine = $('cCrankLine'), cWheelG = $('cWheelG');
+  var cLabelEngine = $('cLabelEngine'), cLabelClutch = $('cLabelClutch');
+  var cLabelGear = $('cLabelGear'), cLabelWheel = $('cLabelWheel');
+
+  (function () {
+    var wrap = $('bridgeSteps');
+    BRIDGE_STEPS.forEach(function (st) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = st.n + '. ' + ['legs', 'gears', 'let go', 'push again'][st.n - 1];
+      b.addEventListener('click', function () { setBridgeStep(st.n); });
+      wrap.appendChild(b);
+      bridgeButtons.push(b);
+    });
+  }());
+
+  function setBridgeStep(n) {
+    bridgeStep = n;
+    var st = BRIDGE_STEPS[n - 1];
+    bridgeButtons.forEach(function (b, i) { b.classList.toggle('on', i === n - 1); });
+    var ul = $('bridgeMaps');
+    ul.innerHTML = st.maps.map(function (m) { return '<li>' + m + '</li>'; }).join('');
+    $('bridgeWhy').textContent = st.why;
+    bLabelCrank.textContent = n === 1 ? 'your legs' : (n === 2 ? 'front sprocket' : 'pedalling');
+    bLabelRear.textContent = n === 2 ? 'small sprocket = a low gear' : 'back sprocket';
+    bLabelChain.textContent = n === 3 ? 'chain no longer pulled' : 'the chain';
+    bLabelNote.textContent = ['you pedal, the chain pulls', 'a low gear turns the wheel faster',
+      'feet off: the wheel freewheels on', 'pedalling again: the chain pulls'][n - 1];
+    cLabelNote.textContent = ['the engine turns a shaft', 'the gearbox swaps the gear',
+      'clutch down: the engine is alone', 'clutch up: the bite'][n - 1];
+    cLabelEngine.textContent = n === 1 ? 'engine' : 'engine turning';
+    cLabelClutch.textContent = n === 3 ? 'clutch pedal down' : (n === 4 ? 'clutch bite' : 'clutch');
+    cLabelGear.textContent = n === 2 ? 'gearbox' : 'gearbox';
+    // dim the parts each step is not about
+    var hotCrank = n === 1, hotRear = n === 2, hotFoot = n === 3;
+    bCrankG.classList.toggle('dimmable', hotRear);
+    bWheelG.classList.toggle('dimmable', hotFoot);
+    bFoot.classList.toggle('dimmable', hotRear);
+    cPlateA.classList.toggle('dimmable', !hotFoot);
+    cGear.classList.toggle('dimmable', n !== 2);
+    cCrankLine.setAttribute('stroke', n === 4 ? 'var(--ok)' : 'var(--engine)');
+    cLabelClutch.style.fill = n === 4 ? 'var(--ok)' : 'var(--clutch)';
+    markDirty();
+  }
+
+  // bike behaviour per step
+  function driveBike(dt) {
+    var pedalling = bridgeStep !== 3;
+    var ratio = [3.5, 1.6, 2.6, 3.5][bridgeStep - 1]; // front teeth per back tooth, roughly
+    bikeCrankRate = pedalling ? 1.1 : 0;
+    bikeWheelRate = pedalling ? bikeCrankRate / ratio : 1.3; // step 3: freewheeling
+    bikeCrankRev += bikeCrankRate * dt;
+    bikeWheelRev += bikeWheelRate * dt;
+    bCrankG.setAttribute('transform', 'rotate(' + (bikeCrankRev * 360).toFixed(1) + ' 42 62)');
+    bWheelG.setAttribute('transform', 'rotate(' + (bikeWheelRev * 360).toFixed(1) + ' 166 78)');
+    if (bridgeStep === 3) {
+      bFoot.setAttribute('transform', 'translate(0 -9)');
+      bFoot.setAttribute('opacity', '0.35');
+    } else {
+      bFoot.setAttribute('transform', 'translate(0 0)');
+      bFoot.setAttribute('opacity', '1');
+    }
+    // car side
+    var e = [0, 0, 0, 0.5][bridgeStep - 1];
+    var gap = 4 + (1 - e) * 16;
+    cPlateA.setAttribute('x', '48');
+    cPlateB.setAttribute('x', (48 + 8 + gap).toFixed(1));
+    cCrankLine.setAttribute('transform', 'rotate(' + (bikeCrankRev * 360).toFixed(1) + ' 25 77)');
+    cWheelG.setAttribute('transform', 'rotate(' + (bikeWheelRev * 360).toFixed(1) + ' 176 94)');
+    if (e > 0) cGear.setAttribute('stroke', 'var(--ok)'); else cGear.setAttribute('stroke', 'var(--box)');
+  }
+  setBridgeStep(1);
+
+  // ---------- how-to cards and mistakes ----------
+  var HOWTO = [
+    {
+      t: 'Pulling away', ctl: { gear: '1', pedal: 0.5, throttle: 0.4, brake: 0 }, speed: 0,
+      steps: [
+        'Left foot: put the clutch pedal all the way down and hold it there.',
+        'Right foot: a little gas, just enough to hear the engine.',
+        'Put the lever into 1st.',
+        'Take your left foot up slowly until the car starts to pull.',
+        'That grabby moment is the bite point. Hold the gas and let the clutch up the rest of the way.'
+      ],
+      mistake: `<b>Riding the clutch.</b> Resting your left foot on the pedal all the time wears the
+        clutch out and makes the car creep. The clutch is either up or down, not halfway.`
+    },
+    {
+      t: 'Shifting up (to a faster gear)', ctl: { gear: '3', pedal: 0.9, throttle: 0.35, brake: 0 },
+      speed: 55, steps: [
+        'Keep the gas steady.',
+        'Left foot down: clutch in, so the engine stops driving the wheels.',
+        'Right hand: lever back and up into the next gear (1&rarr;2&rarr;3&rarr;4&rarr;5).',
+        'Let the clutch back up, then put your left foot on the floor.',
+        'Do it before the needle hits the top of the dial, not after.'
+      ],
+      mistake: `<b>Leaving your hand on the shifter.</b> It helps you find the gear, but it is heavy
+        and you will knock it out. Once the gear is in, your hand goes back.`
+    },
+    {
+      t: 'Shifting down (to a slower gear)', ctl: { gear: '3', pedal: 0.9, throttle: 0.12, brake: 0 },
+      speed: 70, steps: [
+        'Lift off the gas a bit.',
+        'Clutch in, so the engine does not fight the gear.',
+        'Lever forward and down into the lower gear (3&rarr;2&rarr;1).',
+        'Let the clutch up a little more gently than going up &mdash; downshifts jolt the car.',
+        'Match the gear to the speed so the engine is not screaming.'
+      ],
+      mistake: `<b>Lugging the engine.</b> Sitting in a tall gear at walking pace makes it judder and
+        burn fuel. If it is labouring, drop a gear.`
+    },
+    {
+      t: 'Stopping', ctl: { gear: '3', pedal: 1, throttle: 0, brake: 1 }, speed: 50, neutral: true,
+      steps: [
+        'Right foot: brake. Keep braking.',
+        'As you slow down, left foot: clutch in.',
+        'Put the lever into neutral.',
+        'At a complete stop, hold the brake and put the clutch back down.',
+        'If you are stopping for good, the handbrake next.'
+      ],
+      mistake: `<b>Coasting in neutral.</b> The engine stops helping you slow down and you lose
+        control of the speed. Also, if you drop the clutch in a hurry you can stall.`
+    },
+    {
+      t: 'Hill start', ctl: { gear: '1', pedal: 1, throttle: 0.55, brake: 0.55 }, speed: 0, hill: true,
+      steps: [
+        'Foot on the brake, in 1st, and the clutch already down.',
+        'Right foot: build up some gas while the brake is still on.',
+        'Hold the gas, then let the clutch up to the bite point and keep it there.',
+        'When the car starts to move, release the brake.',
+        'Then feed the clutch up. On a hill the car can slide back, so the bite point matters twice.'
+      ],
+      mistake: `<b>Forgetting the clutch at a stop.</b> In a gear with the clutch up and no gas, the
+        engine stalls. That is exactly what this page is showing you.`
+    }
+  ];
+  var MISTAKES = [
+    ['Riding the clutch', 'left foot resting on the pedal, or holding the car on the clutch uphill. It slips, heats up and wears out.'],
+    ['Resting a hand on the shifter', 'it makes the gear knob wander and your hand is not free for the wheel.'],
+    ['Lugging the engine', 'too tall a gear for the speed, so the engine labours and you wait for it on every pull-away.'],
+    ['Coasting in neutral', 'no engine braking, no control of the speed, and a stall waiting for you at the lights.'],
+    ['Forgetting the clutch at a stop', 'in gear, clutch up, no gas: the engine stops. Press the clutch in and give it gas.']
+  ];
+  var GLOSS = [
+    ['Engine', 'the part that burns fuel and turns. It must keep turning or it stops.'],
+    ['Clutch', 'two plates with a spring pushing them together. It connects the engine to the gearbox, or lets go.'],
+    ['Clutch pedal', 'the left pedal. Down separates the plates, up clamps them.'],
+    ['Bite point', 'the bit of clutch travel where the plates start to rub and grab.'],
+    ['Gearbox', 'the box of gears. It changes how hard the engine pushes and how fast the wheels turn.'],
+    ['Gear ratio', 'how many times the engine turns for one turn of the wheels. Low number = strong, high number = fast.'],
+    ['Final drive', 'the last reduction, at the back. It multiplies every gear.'],
+    ['Neutral', 'no gear connected. The engine can rev but drives nothing.'],
+    ['Reverse', 'a gear that adds an extra little gear (an idler) so the wheels turn backwards.'],
+    ['Engine braking', 'with the gas shut and the clutch up, the engine slows the car down.'],
+    ['Power band', 'the stretch of engine speed, about 1,500&ndash;3,500 rpm, where the engine has the most push.'],
+    ['Revs', 'how fast the engine is spinning, in rpm (revolutions per minute).']
+  ];
+
+  function buildHowto() {
+    var wrap = $('howto');
+    wrap.innerHTML = HOWTO.map(function (h, i) {
+      return '<div class="card how"><h3><span class="n">STEP ' + (i + 1) + '</span>' + h.t + '</h3><ol>'
+        + h.steps.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>'
+        + '<div class="btnrow"><button type="button" data-try="' + i + '">Try it</button></div>'
+        + '<p class="mistake">' + h.mistake + '</p></div>';
+    }).join('');
+    wrap.querySelectorAll('[data-try]').forEach(function (b) {
+      b.addEventListener('click', function () { applyHowto(Number(b.getAttribute('data-try'))); });
+    });
+    $('mistakes').innerHTML = MISTAKES.map(function (m) {
+      return '<div class="card how"><h3>' + m[0] + '</h3><p style="margin:.2em 0 0;font-size:13.5px">'
+        + m[1] + '</p></div>';
+    }).join('');
+    $('gloss').innerHTML = GLOSS.map(function (g) {
+      return '<div><b>' + g[0] + '</b> &mdash; ' + g[1] + '</div>';
+    }).join('');
+  }
+
+  function applyHowto(i, quiet) {
+    var h = HOWTO[i];
+    if (!h) return;
+    state = initialState();
+    state.gear = h.ctl.gear;
+    state.pedal = h.ctl.pedal;
+    if (h.speed) {
+      var wheel = wheelRpmForSpeed(h.speed);
+      state.wheelRpm = wheel;
+      state.engineRpm = Math.min(engineRpmAtWheelRpm(wheel, h.ctl.gear), 3500);
+      if (h.hill) state.engineRpm = 1800;
+    }
+    if (h.neutral) state.gear = 'N';
+    ctl.gear = state.gear;
+    ctl.pedal = state.pedal;
+    ctl.throttle = h.ctl.throttle;
+    ctl.brake = h.ctl.brake;
+    pushControls();
+    lastGearDrawn = state.gear;
+    syncLabels();
+    if (!quiet) {
+      $('machineStage').scrollIntoView({ behavior: motionAllowed ? 'smooth' : 'auto', block: 'start' });
+    }
+    markDirty();
+  }
+  buildHowto();
+  if (presetToApply !== null && presetToApply >= 0 && presetToApply < HOWTO.length) {
+    applyHowto(presetToApply, true);
+  }
+  $('tally').textContent = HOWTO.length + ' things you can try, ' + MISTAKES.length
+    + ' things everyone does at first, ' + GLOSS.length + ' words in the glossary';
+  // index.html#check=1 measures the layout and writes the answer into the page,
+  // so "no sideways scroll on a phone" can be looked at rather than assumed
+  if (/check=1/.test(String(window.location.hash || ''))) {
+    window.setTimeout(function () {
+      var el = document.documentElement;
+      var over = el.scrollWidth - el.clientWidth;
+      var bodyEl = document.body;
+      var bodyW = Math.round(bodyEl.getBoundingClientRect().width);
+      var bodyOver = bodyEl.scrollWidth - bodyEl.clientWidth;
+      var btns = [].slice.call(document.querySelectorAll('#gate button'));
+      var smallest = btns.reduce(function (acc, b) {
+        var r = b.getBoundingClientRect();
+        return [Math.min(acc[0], r.width), Math.min(acc[1], r.height)];
+      }, [1e9, 1e9]).map(function (v) { return Math.round(v); });
+      var gateBottom = Math.round($('gate').getBoundingClientRect().bottom
+        + bodyEl.getBoundingClientRect().top);
+      $('tally').textContent = 'layout: viewport ' + window.innerWidth + 'x' + window.innerHeight
+        + ', body ' + bodyW + ', scrollWidth ' + bodyEl.scrollWidth + ' clientWidth '
+        + bodyEl.clientWidth + ' -> ' + (bodyOver > 1 ? 'HORIZONTAL OVERFLOW of ' + bodyOver + 'px'
+          : 'no horizontal scroll')
+        + ' | gate buttons ' + btns.length + ', smallest ' + smallest[0] + 'x' + smallest[1]
+        + 'px, gate bottom at y=' + gateBottom
+        + (gateBottom <= window.innerHeight ? ' (whole gate above the fold)'
+          : ' (gate runs past the fold)');
+    }, 400);
+  }
+  pushControls();
+  syncLabels();
+
+  function syncLabels() {
+    markDirty();
+    clutchOut.textContent = pedalWords(ctl.pedal);
+    gasOut.textContent = ctl.throttle < 0.02 ? 'closed'
+      : Math.round(ctl.throttle * 100) + '% open';
+    brakeOut.textContent = ctl.brake < 0.02 ? 'off' : Math.round(ctl.brake * 100) + '% on';
+  }
+
+  // ---------- inputs ----------
+  function setSlider(el, v) {
+    var text = String(Math.round(v * 100));
+    el.value = text;
+    el.setAttribute('value', text);
+  }
+
+  function pushControls() {
+    setSlider(clutchEl, ctl.pedal);
+    setSlider(gasEl, ctl.throttle);
+    setSlider(brakeEl, ctl.brake);
+    Array.prototype.forEach.call($('gate').querySelectorAll('button'), function (x) {
+      x.classList.toggle('on', x.getAttribute('data-gear') === ctl.gear);
+    });
+    lastGearDrawn = '';
+  }
+
+  clutchEl.addEventListener('input', function () { ctl.pedal = clutchEl.value / 100; syncLabels(); });
+  gasEl.addEventListener('input', function () { ctl.throttle = gasEl.value / 100; syncLabels(); });
+  brakeEl.addEventListener('input', function () { ctl.brake = brakeEl.value / 100; syncLabels(); });
+  syncLabels();
+
+  $('gate').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-gear]');
+    if (!b) return;
+    var want = b.getAttribute('data-gear');
+    var engagement = engagementFromPedal(ctl.pedal);
+    if (want !== ctl.gear && want !== 'N' && engagement > 0.05) {
+      // you cannot grab a gear with the clutch locked
+      gearHint.dataset.refused = '1';
+      b.classList.add('refused');
+      window.setTimeout(function () { b.classList.remove('refused'); }, 320);
+      return;
+    }
+    ctl.gear = want;
+    lastGearDrawn = '';
+    Array.prototype.forEach.call($('gate').querySelectorAll('button'), function (x) {
+      x.classList.toggle('on', x.getAttribute('data-gear') === want);
+    });
+  });
+  $('resetBtn').addEventListener('click', function () {
+    state = initialState();
+    ctl = { pedal: 1, throttle: 0, brake: 0, gear: 'N' };
+    pushControls();
+    Array.prototype.forEach.call($('gate').querySelectorAll('button'), function (x) {
+      x.classList.toggle('on', x.getAttribute('data-gear') === 'N');
+    });
+    lastGearDrawn = '';
+    syncLabels();
+  });
+
+  motionBtn.addEventListener('click', function () {
+    motionAllowed = !motionAllowed;
+    updateMotionButton();
+    markDirty();
+  });
+  function updateMotionButton() {
+    motionBtn.textContent = motionAllowed ? 'Pause' : 'Play';
+    motionBtn.setAttribute('aria-pressed', motionAllowed ? 'false' : 'true');
+  }
+  updateMotionButton();
+
+  function darkNow() {
+    if (themeStart) return themeStart === 'dark';
+    if (document.documentElement.getAttribute('data-theme') === 'dark') return true;
+    return Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  themeBtn.textContent = darkNow() ? 'Light' : 'Dark';
+  themeBtn.addEventListener('click', function () {
+    var goDark = !darkNow();
+    themeStart = goDark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', goDark ? 'dark' : 'light');
+    themeBtn.textContent = goDark ? 'Light' : 'Dark';
+  });
+
+  // ---------- the loop ----------
+  var last = 0;
+  var dirty = true;
+  function markDirty() { dirty = true; }
+  window.addEventListener('resize', markDirty);
+  function frame(now) {
+    var dt = last ? (now - last) / 1000 : 1 / 60;
+    last = now;
+    var running = motionAllowed && !document.hidden;
+    if (running) {
+      state = step(state, ctl, dt);
+      draw(snapshot(state));
+      driveBike(dt);
+    } else if (dirty) {
+      draw(snapshot(state));
+      driveBike(0);
+      dirty = false;
+    }
+    window.requestAnimationFrame(frame);
+  }
+  draw(snapshot(state));
+  window.requestAnimationFrame(frame);
+
+  // expose a tiny hook so a test harness or the console can poke it
+  window.manualExplainer = {
+    get state() { return state; },
+    get controls() { return ctl; },
+    setControls: function (o) {
+      if (o.pedal !== undefined) { ctl.pedal = o.pedal; }
+      if (o.throttle !== undefined) { ctl.throttle = o.throttle; }
+      if (o.brake !== undefined) { ctl.brake = o.brake; }
+      if (o.gear !== undefined) { ctl.gear = o.gear; lastGearDrawn = ''; }
+      pushControls();
+      syncLabels();
+    },
+    reset: function () { state = initialState(); ctl = { pedal: 1, throttle: 0, brake: 0, gear: 'N' }; },
+    model: {
+      engagementFromPedal: engagementFromPedal, clutchZone: clutchZone, totalRatio: totalRatio,
+      speedKphAtEngineRpm: speedKphAtEngineRpm, shouldStall: shouldStall, step: step,
+      snapshot: snapshot, initialState: initialState, isSlipping: isSlipping,
+      powerBand: powerBand, rpmInGearAtSpeed: rpmInGearAtSpeed
+    }
+  };
+}());
+</script>
+</body>
+</html>

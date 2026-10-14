@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b1b">
+  <meta name="description" content="The Hollow Gap Arcade: three tiny original games in one fictional cabinet.">
+  <title>The Hollow Gap Arcade</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="arcade-page">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Hollow Gap, West Virginia · fictional cabinet</p>
+        <h1>The Hollow Gap <span>Arcade</span></h1>
+      </div>
+      <div class="header-actions">
+        <button class="small-button" id="soundToggle" type="button" aria-pressed="false">Sound: off</button>
+        <button class="small-button" id="crtToggle" type="button" aria-pressed="false">CRT: off</button>
+        <button class="small-button" id="attractButton" type="button">Attract mode</button>
+      </div>
+    </header>
+
+    <section class="cabinet" aria-label="Hollow Gap Arcade cabinet">
+      <div class="marquee" aria-hidden="true"><span>THE HOLLOW GAP ARCADE</span><small>THREE SHORT GAMES · ONE SMALL ROOM</small></div>
+      <div class="screen-frame">
+        <div class="screen-topline"><span id="sceneLabel">ATTRACT MODE</span><span id="gamepadStatus">INPUT: KEYBOARD</span></div>
+        <div class="screen-wrap" id="screenWrap">
+          <canvas id="gameCanvas" width="320" height="180" tabindex="0" role="img" aria-label="Hollow Gap Arcade game screen"></canvas>
+          <div class="screen-glass" aria-hidden="true"></div>
+          <div class="scanlines" aria-hidden="true"></div>
+        </div>
+        <div class="screen-bottomline"><span id="statusText">Choose a game. The room is listening.</span><span id="scoreText">HIGH 000000</span></div>
+      </div>
+      <div class="control-deck">
+        <div class="deck-copy"><strong>PLAY THE GAP</strong><span>Keyboard · gamepad · touch</span></div>
+        <div class="deck-buttons"><button class="deck-button primary" data-start="diner" type="button">1 · NIGHT SHIFT</button><button class="deck-button" data-start="tower" type="button">2 · TOWER CLIMB</button><button class="deck-button" data-start="static" type="button">3 · STATIC</button></div>
+        <div class="deck-light" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="game-grid" aria-label="Game selection">
+      <article class="game-card diner-card"><div class="card-art" aria-hidden="true">COF</div><div><p class="eyebrow">01 · order rush</p><h2>Night Shift at the Diner</h2><p>Keep the orders moving through the last shift. At 3 a.m., the bell rings for the boss.</p><button class="play-button" data-start="diner" type="button">Play night shift <span>↗</span></button></div></article>
+      <article class="game-card tower-card"><div class="card-art" aria-hidden="true">ANT</div><div><p class="eyebrow">02 · vertical climb</p><h2>Tower Climb</h2><p>Find the beacon above the storm. Wind is real enough to move the wrong way.</p><button class="play-button" data-start="tower" type="button">Climb the tower <span>↗</span></button></div></article>
+      <article class="game-card static-card"><div class="card-art" aria-hidden="true">TUNE</div><div><p class="eyebrow">03 · reflex radio</p><h2>Static</h2><p>Tune the dial. Catch the transmission before the mountain takes it back.</p><button class="play-button" data-start="static" type="button">Tune the dial <span>↗</span></button></div></article>
+    </section>
+
+    <section class="help-strip" aria-label="Controls and scores">
+      <div><strong>Keyboard</strong><span>Arrows / WASD move · Space or Z action · Enter starts · P pauses</span></div>
+      <div><strong>Touch</strong><span>Use the on-screen controls below the cabinet.</span></div>
+      <div><strong>Scores</strong><span>Local initials live only in this browser.</span></div>
+    </section>
+
+    <section class="touch-panel" aria-label="Touch controls">
+      <div class="touch-pad"><button data-input="left" type="button" aria-label="Move left">◀</button><button data-input="up" type="button" aria-label="Jump or tune up">▲</button><button data-input="down" type="button" aria-label="Tune down">▼</button><button data-input="right" type="button" aria-label="Move right">▶</button></div>
+      <button class="touch-action" data-input="action" type="button">ACTION</button>
+      <button class="touch-pause" id="pauseButton" type="button">PAUSE</button>
+    </section>
+
+    <p class="page-footer">Original generated art, synthesized chiptune, and a small amount of weather. No downloaded sprites, live services, or networked scores.</p>
+  </main>
+
+  <div class="score-modal" id="scoreModal" hidden role="dialog" aria-modal="true" aria-labelledby="scoreTitle">
+    <div class="modal-card"><p class="eyebrow">local high score</p><h2 id="scoreTitle">New mark</h2><p id="scoreMessage">Leave your initials in this cabinet.</p><form id="scoreForm"><label for="initials">Initials</label><input id="initials" maxlength="3" autocomplete="off" value="AAA"><button class="play-button" type="submit">Save locally</button></form><button class="small-button" id="closeScore" type="button">Close</button></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

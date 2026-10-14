@@ -1,0 +1,58 @@
+{
+  "schema": "path-mtu-evidence-kit/synthetic-link-cases/v1",
+  "warning": "All link MTUs are synthetic contract examples, not measurements of any real interface, route or path.",
+  "link_mtu_source": "supplied_contract",
+  "tunnel_default": "UNSUPPLIED \u2014 no tunnel overhead is assumed for WireGuard, IPsec or any ISP",
+  "cases": [
+    {
+      "id": "synthetic-1500-ipv4-tcp",
+      "label": "1500 byte contract, IPv4 + TCP",
+      "why": "the shape almost everyone pictures: a 1500 byte link, 20 byte IPv4, 20 byte TCP"
+    },
+    {
+      "id": "synthetic-1500-ipv4-tcp-tunnel-32",
+      "label": "1500 byte contract, IPv4 + TCP, 32 byte tunnel supplied",
+      "why": "what declaring an encapsulation overhead actually does to the payload"
+    },
+    {
+      "id": "synthetic-1492-ipv4-tcp-opts12",
+      "label": "1492 byte contract, IPv4 + TCP with 12 option bytes",
+      "why": "the 1492 number people paste from other people's configs, plus the option bytes a real stack negotiates"
+    },
+    {
+      "id": "synthetic-1280-ipv6-tcp-opts12",
+      "label": "1280 byte contract, IPv6 + TCP with 12 option bytes",
+      "why": "the smallest link IPv6 requires anywhere (RFC 8200 s5)"
+    },
+    {
+      "id": "synthetic-9000-ipv6-udp",
+      "label": "9000 byte contract, IPv6 + UDP",
+      "why": "a jumbo-sized contract, to show the same arithmetic scales"
+    },
+    {
+      "id": "synthetic-9000-ipv4-tcp-opts40",
+      "label": "9000 byte contract, IPv4 + TCP with 40 option bytes",
+      "why": "the worst realistic IPv4 option block"
+    },
+    {
+      "id": "synthetic-1500-ipv4-udp",
+      "label": "1500 byte contract, IPv4 + UDP",
+      "why": "UDP's fixed 8 byte header, and why QUIC-shaped traffic differs"
+    },
+    {
+      "id": "synthetic-1500-ipv6-in-ipv4-tunnel-80",
+      "label": "1500 byte contract, IPv6 inside IPv4 with an 80 byte tunnel",
+      "why": "double headers: the outer IPv4 header is charged AND the inner IPv6 header is charged"
+    },
+    {
+      "id": "synthetic-1500-ipv6-tunnel-80-unsupplied",
+      "label": "1500 byte contract, tunnel PRESENT but overhead not declared",
+      "why": "the honest unknown: a tunnel exists and nobody published its byte count"
+    },
+    {
+      "id": "synthetic-68-ipv6-tunnel-80-negative",
+      "label": "68 byte contract, IPv6 + TCP with an 80 byte tunnel",
+      "why": "headers do not fit inside the contract: a contradiction, reported as one"
+    }
+  ]
+}

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Path MTU Evidence Kit — read-only packet size troubleshooter</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#stack">Skip to the packet stack view</a>
+
+<header class="top">
+  <h1>Path MTU Evidence Kit</h1>
+  <p class="tagline">A read-only calculator and evidence checker that separates
+    <strong>a proven path limit</strong> from
+    <strong>a guess about a VPN, a tunnel or a broken download</strong>.</p>
+  <p class="pmtu-banner" id="pmtu-banner" role="status">
+    <span class="pmtu-label">End&#8209;to&#8209;end PMTU</span>
+    <span class="pmtu-value" id="pmtu-value">END_TO_END_PMTU_UNKNOWN</span>
+  </p>
+  <p class="banner-why" id="banner-why"></p>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <button type="button" class="tab" data-tab="facts" aria-selected="true">1 &middot; The four facts</button>
+  <button type="button" class="tab" data-tab="stack">2 &middot; Packet stack</button>
+  <button type="button" class="tab" data-tab="traces">3 &middot; What a probe can tell you</button>
+  <button type="button" class="tab" data-tab="loopback">4 &middot; Application limits</button>
+  <button type="button" class="tab" data-tab="graph">5 &middot; Diagnosis</button>
+  <button type="button" class="tab" data-tab="worksheet">6 &middot; Worksheet</button>
+</nav>
+
+<main>
+
+<!-- ------------------------------------------------------------------ -->
+<section id="tab-facts" class="panel" aria-label="The four facts">
+  <h2>The four facts, kept apart</h2>
+  <p class="lede">Every number in this kit is one of these four, or it is nothing.
+    The failure mode this kit exists to stop is promoting one into another.</p>
+  <div id="facts-grid" class="facts-grid"></div>
+  <h3>Synthetic-only public edition</h3>
+  <div id="real-evidence" class="real-evidence"></div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section id="tab-stack" class="panel" aria-label="Packet stack view" hidden>
+  <h2>Packet stack view</h2>
+  <p class="lede">Every bar segment reflects the declared header byte counts, and every
+    byte count carries its source.</p>
+
+  <div class="controls">
+    <label class="control">
+      <span>Case</span>
+      <select id="case-select"></select>
+    </label>
+    <label class="control">
+      <span>IP version</span>
+      <select id="ip-version">
+        <option value="ipv4">IPv4</option>
+        <option value="ipv6">IPv6</option>
+      </select>
+    </label>
+    <label class="control">
+      <span>Transport</span>
+      <select id="transport">
+        <option value="tcp">TCP</option>
+        <option value="udp">UDP</option>
+      </select>
+    </label>
+    <label class="control">
+      <span>Link MTU (contract)</span>
+      <input id="link-mtu" type="number" min="68" max="65536" step="1" value="1500">
+    </label>
+    <label class="control checkbox">
+      <input id="tunnel-present" type="checkbox">
+      <span>A tunnel is carrying this packet</span>
+    </label>
+    <label class="control">
+      <span>Tunnel overhead (bytes)</span>
+      <input id="tunnel-bytes" type="number" min="0" max="4096" step="1" value="32" disabled>
+    </label>
+    <label class="control">
+      <span>Outer IP version</span>
+      <select id="outer-ip" disabled>
+        <option value="ipv4">IPv4</option>
+        <option value="ipv6">IPv6</option>
+      </select>
+    </label>
+    <label class="control">
+      <span>IPv4 option bytes</span>
+      <input id="ip-options" type="number" min="0" max="40" step="4" value="0">
+    </label>
+    <label class="control">
+      <span>IPv6 extension bytes</span>
+      <input id="ip6-ext" type="number" min="0" max="64" step="8" value="0">
+    </label>
+    <label class="control">
+      <span>TCP option bytes</span>
+      <input id="tcp-options" type="number" min="0" max="40" step="4" value="0">
+    </label>
+    <label class="control checkbox">
+      <input id="df-set" type="checkbox">
+      <span>IPv4 don't-fragment bit set</span>
+    </label>
+    <div class="actions inline">
+      <button type="button" id="btn-reveal-missing" class="btn warn">
+        Reveal the missing-overhead case
+      </button>
+      <button type="button" id="btn-reset" class="btn">Reset</button>
+    </div>
+  </div>
+  <p class="hint" id="stack-hint"></p>
+
+  <div class="observed-strip" id="observed-strip" hidden></div>
+
+  <div class="stack-wrap">
+    <div class="stack-ruler" id="stack-ruler"></div>
+    <div class="stack-bar" id="stack-bar" role="img" aria-labelledby="stack-desc"></div>
+    <p class="stack-desc" id="stack-desc"></p>
+  </div>
+
+  <div class="verdict-row" id="stack-verdict"></div>
+
+  <div class="table-scroll"><table class="layers" id="layer-table">
+    <caption>Every subtraction, in order, with its source type</caption>
+    <thead><tr><th scope="col">Stage</th><th scope="col">Bytes</th>
+      <th scope="col">Source</th><th scope="col">Remaining after</th>
+      <th scope="col">Where the number comes from</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <p class="note" id="refs"></p>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section id="tab-traces" class="panel" aria-label="Probe evidence" hidden>
+  <h2>What a probe can and cannot tell you</h2>
+  <p class="lede">These are synthetic traces from a seeded model, not captures from
+    anyone's network. Replay each one and read what the report refuses to claim.</p>
+  <div class="controls">
+    <label class="control wide">
+      <span>Trace</span>
+      <select id="trace-select"></select>
+    </label>
+    <button type="button" id="btn-replay" class="btn">Replay</button>
+  </div>
+  <p class="trace-teaches" id="trace-teaches"></p>
+  <div class="verdict-row" id="trace-verdict"></div>
+  <div class="table-scroll"><table class="layers" id="trace-table">
+    <caption>Attempt by attempt</caption>
+    <thead><tr><th scope="col">#</th><th scope="col">Size</th>
+      <th scope="col">Outcome</th><th scope="col">Error MTU</th>
+      <th scope="col">Reason</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <div class="not-prove" id="trace-not-prove"></div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section id="tab-loopback" class="panel" aria-label="Application limits" hidden>
+  <h2>Application limits are not packet limits</h2>
+  <p class="lede">Three synthetic application examples. These invented outcomes illustrate why
+    application limits and packet limits differ; they are not measurement receipts.</p>
+  <div class="actions">
+    <button type="button" id="btn-loopback-detail" class="btn"
+      aria-expanded="false" aria-controls="loopback-raw">Show synthetic records</button>
+    <span class="hint" id="loopback-hint"></span>
+  </div>
+  <pre id="loopback-raw" class="raw" hidden></pre>
+  <div class="loopback-list" id="loopback-list"></div>
+  <div class="not-prove" id="loopback-separation"></div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section id="tab-graph" class="panel" aria-label="Diagnosis" hidden>
+  <h2>Diagnosis from saved evidence only</h2>
+  <p class="lede">Declare a symptom. The graph answers CONFIRMED, CONTRADICTED or
+    UNKNOWN, with the observations that decided it and the evidence that is missing.
+    It never proposes a change to a live setting and never names a provider.</p>
+  <div class="controls">
+    <label class="control wide">
+      <span>Declared symptom</span>
+      <select id="symptom-select"></select>
+    </label>
+  </div>
+  <p class="declared" id="symptom-declared"></p>
+  <div class="verdict-row" id="symptom-verdict"></div>
+  <h3>Observations</h3>
+  <ul class="obs" id="symptom-observations"></ul>
+  <h3>Missing evidence</h3>
+  <ul class="obs missing" id="symptom-missing"></ul>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section id="tab-worksheet" class="panel" aria-label="Worksheet" hidden>
+  <h2>Read-only troubleshooting worksheet</h2>
+  <p class="lede">Print this. Tick boxes are for evidence you have actually seen.
+    It prescribes nothing to change.</p>
+  <button type="button" id="btn-print" class="btn">Print / save as PDF</button>
+  <div id="worksheet"></div>
+</section>
+
+</main>
+
+<footer>
+  <p><strong>This tool changes nothing.</strong> It reads no router setting, sends no
+    traffic, captures no packets and opens no socket. Every number it shows is either
+    a protocol constant, a contract number a caller supplied, or a synthetic fixture
+    label. No real route, interface or captured transfer record is included.</p>
+  <p class="footer-pmtu">End-to-end PMTU: <code>END_TO_END_PMTU_UNKNOWN</code></p>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "marble-music-toy",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "A marble machine you can play: drag, tune, drop, share.",
+  "scripts": {
+    "test": "node test.mjs"
+  }
+}
